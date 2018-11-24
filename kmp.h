@@ -2,9 +2,10 @@
 #include <string>
 #include <vector>
 #include <deque>
-#include <functional>
+#include <boost/circular_buffer.hpp>
 
-using fvector = std::vector<int>; // TODO: int ???
+using fint = uint32_t;
+using fvector = std::vector<fint>;
 using symbol_t = char;
 
 struct kmp
@@ -13,8 +14,8 @@ public:
 	kmp();
 
 	bool contains_pattern(std::istream &pattern, std::istream &text);
-	int count_occurrences(std::istream &pattern, std::istream &text);
-	std::vector<int> pattern_positions(std::istream &pattern, std::istream &text);
+	fint count_occurrences(std::istream &pattern, std::istream &text);
+	fvector pattern_positions(std::istream &pattern, std::istream &text);
 	bool contains_pattern(const std::string &pattern, const std::string &text);
 
 private:
@@ -32,11 +33,12 @@ private:
 private:
 	fvector pattern_prefix;
 	std::string pattern;
-	std::deque<symbol_t> textqu;
-	std::vector<int> occurrences;
-	int count = 0;
+	// std::deque<symbol_t> textqu;
+	boost::circular_buffer<symbol_t> textqu;
+	fvector occurrences;
+	fint count = 0;
 
-	int max_pref_length = 0;
+	size_t max_pref_length = 0;
 	size_t text_it = 0;
 	bool is_found = false;
 };
