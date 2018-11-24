@@ -3,7 +3,6 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <functional>
 
 kmp::kmp()
 { }
@@ -12,15 +11,15 @@ bool kmp::contains_pattern(std::istream& pattern, std::istream& text)
 {
 	process_kmp(pattern, text,
 		[&]() { return is_found; },
-		[&](const fint index) { is_found = true; });
+		[&](const fuint index) { is_found = true; });
 	return is_found;
 }
 
-fint kmp::count_occurrences(std::istream& pattern, std::istream& text)
+fuint kmp::count_occurrences(std::istream& pattern, std::istream& text)
 {
 	process_kmp(pattern, text,
 		[]() { return false; },
-		[&](const fint index) { ++count; });
+		[&](const fuint index) { ++count; });
 	return count;
 }
 
@@ -28,7 +27,7 @@ fvector kmp::pattern_positions(std::istream& pattern, std::istream& text)
 {
 	process_kmp(pattern, text,
 		[]() { return false; },
-		[&](const fint index) { occurrences.push_back(index); });
+		[&](const fuint index) { occurrences.push_back(index); });
 	return occurrences;
 }
 
@@ -46,12 +45,11 @@ void kmp::process_kmp(std::istream& pattern, std::istream& text,
 	preprocess(pattern);
 
 	symbol_t ch;
-	while (text >> ch)
+	while (text.get(ch))
 	{
 		textqu.push_back(ch);
 		if (textqu.size() > this->pattern.size())
 			textqu.pop_front();
-
 		recalc(ch, kmp_task);
 		if (ret_condition()) return;
 		++text_it;
@@ -64,7 +62,7 @@ fvector kmp::prefix_function(const std::string &s)
 	result.shrink_to_fit();
 
 	result[0] = 0;
-	fint k = 0;
+	fuint k = 0;
 	for (size_t i = 1; i < s.size(); ++i)
 	{
 		while (k > 0 && s[i] != s[k]) k = result[k - 1];
@@ -76,7 +74,8 @@ fvector kmp::prefix_function(const std::string &s)
 
 void kmp::preprocess(std::istream& patt)
 {
-	patt >> pattern;
+	pattern = std::string((std::istreambuf_iterator<char>(patt)),
+		std::istreambuf_iterator<char>());
 	max_pref_length = 0;
 	size_t text_it = 0;
 	is_found = false;
@@ -95,7 +94,7 @@ void kmp::recalc(char cur_text_ch, Ft &kmp_task)
 		++max_pref_length;
 	if (max_pref_length == pattern.size())
 	{
-		kmp_task(fint(text_it + 1 - pattern.size()));
+		kmp_task(fuint(text_it + 1 - pattern.size()));
 		max_pref_length = pattern_prefix[max_pref_length - 1];
 	}
 }
