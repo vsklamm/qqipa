@@ -3,12 +3,16 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    indexer(new ThreeGramIndexer),
+    taskTimer(new QElapsedTimer)
 {
     ui->setupUi(this);
+
+
+
 }
 
 MainWindow::~MainWindow()
 {
-    delete ui;
 }
