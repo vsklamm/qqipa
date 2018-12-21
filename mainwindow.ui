@@ -15,24 +15,12 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
-    <property name="leftMargin">
-     <number>6</number>
-    </property>
-    <property name="topMargin">
-     <number>0</number>
-    </property>
-    <property name="rightMargin">
-     <number>6</number>
-    </property>
-    <property name="bottomMargin">
-     <number>0</number>
-    </property>
     <item>
      <widget class="QSplitter" name="splitter">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
-      <widget class="QListView" name="listView"/>
+      <widget class="QListWidget" name="listFoundFiles"/>
       <widget class="QTextBrowser" name="textBrowser"/>
      </widget>
     </item>
@@ -55,8 +43,26 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionSelectDirectory"/>
+   <addaction name="actionStartSearch"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionSelectDirectory">
+   <property name="text">
+    <string>SelectDirectory</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionStartSearch">
+   <property name="text">
+    <string>StartSearch</string>
+   </property>
+   <property name="shortcut">
+    <string>Return</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>

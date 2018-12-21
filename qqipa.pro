@@ -23,15 +23,18 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 CONFIG += c++17
+QMAKE_CXXFLAGS_RELEASE += -O3
 
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    threegramindexer.cpp
+    fileselection.cpp \
+    indexedfile.cpp
 
 HEADERS += \
         mainwindow.h \
-    threegramindexer.h
+    fileselection.h \
+    indexedfile.h
 
 FORMS += \
         mainwindow.ui
