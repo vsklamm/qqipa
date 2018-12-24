@@ -7,8 +7,11 @@
 #include <QFuture>
 #include <QThread>
 #include <QFutureWatcher>
+#include <QList>
 
 #include <set>
+
+namespace qqipa {
 
 struct FileSelection : QObject
 {
@@ -25,7 +28,10 @@ public slots:
     void startSearch(std::set<QString> &start_dirs, bool recursively = true);
     std::vector<QString> processDirectories(std::set<QString> &start_dirs, bool recursively = true);
     void indexFoundFiles();
+    void indexPortion();
     void interruptProcessing();
+
+    void onIndexingFinished();
 
 public:
     // methods
@@ -38,9 +44,14 @@ public:
     QFuture<std::vector<QString>> files_to_search_future;
     QFutureWatcher<std::vector<QString>> files_to_search_watcher;
 
+    QFuture<void> indexer_future;
+    QFutureWatcher<void> indexer_watcher;
+
 private:
     int minsize= 1;
 
 };
+
+}
 
 #endif // FILESELECTION_H

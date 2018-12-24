@@ -15,7 +15,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     fileSelection(new FileSelection),
-    indexer(new IndexedFile),
     taskTimer(new QElapsedTimer)
 {
     ui->setupUi(this);
@@ -37,6 +36,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Left), this, SLOT(moveSplitterLeft()));
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Right), this, SLOT(moveSplitterRight()));
+
+    QThreadPool::globalInstance()->setMaxThreadCount(10);
 }
 
 MainWindow::~MainWindow()

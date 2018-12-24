@@ -12,6 +12,8 @@
 
 #include <memory>
 
+using namespace qqipa;
+
 namespace Ui {
 class MainWindow;
 }
@@ -52,7 +54,6 @@ private:
     std::unique_ptr<QLabel> labelDupes;
 
     std::unique_ptr<FileSelection> fileSelection;
-    std::unique_ptr<IndexedFile> indexer;
     std::unique_ptr<QElapsedTimer> taskTimer;
 };
 

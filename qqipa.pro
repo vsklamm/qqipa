@@ -4,7 +4,9 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui\
+            widgets\
+            concurrent
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -29,12 +31,18 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     fileselection.cpp \
-    indexedfile.cpp
+    indexedfile.cpp \
+    patternsearcher.cpp \
+    trigramcontainer.cpp \
+    patterncontainer.cpp
 
 HEADERS += \
         mainwindow.h \
     fileselection.h \
-    indexedfile.h
+    indexedfile.h \
+    patternsearcher.h \
+    trigramcontainer.h \
+    patterncontainer.h
 
 FORMS += \
         mainwindow.ui
