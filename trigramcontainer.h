@@ -19,8 +19,6 @@ private:
     void makeAvailable();
 
 
-
-
 public:
     std::vector<trigram_t> trigrams_;
 

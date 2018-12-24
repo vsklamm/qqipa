@@ -104,6 +104,7 @@ void FileSelection::interruptProcessing()
 void FileSelection::onIndexingFinished()
 {
     qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
+    emit indexingFinished(0);
 }
 
 void FileSelection::clearData()

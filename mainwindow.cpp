@@ -71,6 +71,7 @@ void MainWindow::startSearch()
 
     if (start_dir.size() != 0) {
         std::set<QString> t = { start_dir };
+        taskTimer->restart();
         fileSelection->startSearch(t, true);
     }
 }

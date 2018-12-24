@@ -15,6 +15,9 @@ signals:
 
 public slots:
 
+private:
+    QString pattern_;
+
 };
 
 }
