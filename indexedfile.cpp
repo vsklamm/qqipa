@@ -8,19 +8,20 @@
 #include <QList>
 
 #include <algorithm>
+#include <bitset>
 
 namespace qqipa {
 
 using namespace magic_numbers; // TODO: Is it bad?
 
 IndexedFile::IndexedFile(QString file_name, QString file_path, fsize_t size)
-    : /* was_canceled(false), */name_(file_name), path_(file_path), size_(size)
+    : name_(file_name), path_(file_path), size_(size)
 {
 
 }
 
 IndexedFile::IndexedFile(QFileInfo file_info)
-    :  /*was_canceled(false),*/ name_(file_info.fileName()), path_(file_info.absolutePath()), size_(file_info.size())
+    : name_(file_info.fileName()), path_(file_info.absolutePath()), size_(file_info.size())
 {
 
 }
@@ -30,24 +31,71 @@ IndexedFile::~IndexedFile()
 
 }
 
-void IndexedFile::calculateIndex()
+bool IndexedFile::calculateIndex()
 {
-    qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
+    return (size_ < small_large_size) ? calculateSmallFile() : calculateLargeFile();
+}
 
+void IndexedFile::interruptIndexing()
+{
+
+}
+
+bool IndexedFile::containsMagicNumber(magic_t &file_magic)
+{
+    return std::find_if(mnumbers.begin(), mnumbers.end(), [=](auto& magic_n) {
+        return file_magic.number == magic_n.second.number;
+    }) != mnumbers.end();
+}
+
+bool IndexedFile::calculateSmallFile()
+{
+    QFile read_file(getFullPath());
+    if (!read_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return false;
+    }
+    auto file_ptr = read_file.map(0, size_);
+    read_file.close();
+
+    std::unordered_set<trigram_t> temp;
+    if (file_ptr != nullptr)
+    {
+        magic_t file_magic;
+        std::copy(file_ptr, file_ptr + std::min(size_t(size_), max_magic_bytes), file_magic.bytes);
+        if (containsMagicNumber(file_magic)) {
+            return false;
+        }
+
+        trigram_t mask = 0x00FFFFFF;
+        trigram_t x = (trigram_t(0[file_ptr]) << 8) | (trigram_t(1[file_ptr]));
+        for (fsize_t i = 2; i < size_; ++i)
+        {
+            x = (((x << 8) & mask) | trigram_t(file_ptr[i]));
+            temp.insert(x);
+        }
+    }
+    container_.reserve(temp.size());
+    for (auto& tr : temp)
+    {
+        container_.push_back(tr);
+    }
+    return true;
+}
+
+bool IndexedFile::calculateLargeFile()
+{
     char buffer[buffer_size];
     std::unordered_set<trigram_t> temp;
 
-    QFile read_file(appendPath(path_, name_));
-    QTextStream fileStream(&read_file);
+    QFile read_file(getFullPath());
     if (read_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 
         if (read_file.read(buffer, max_magic_bytes) == max_magic_bytes)
         {
             magic_t file_magic;
-            std::copy(file_magic.bytes, file_magic.bytes + max_magic_bytes, buffer);
-            if (!checkForMagicNumbers(file_magic)) {
-                this->is_binary_ = true;
-                return;
+            std::copy(buffer, buffer + max_magic_bytes, file_magic.bytes);
+            if (containsMagicNumber(file_magic)) {
+                return false;
             }
         }
 
@@ -69,37 +117,19 @@ void IndexedFile::calculateIndex()
             }
             if (temp.size() > evil_number)
             {
-                this->is_binary_ = true;
-                break;
+                read_file.close();
+                return false;
             }
         }
         read_file.close();
     }
 
-    if (!this->is_binary_) {
-        container_.trigrams_.reserve(temp.size());
-        for (auto& tr : temp)
-        {
-            container_.trigrams_.push_back(tr);
-        }
+    container_.reserve(temp.size());
+    for (auto& tr : temp)
+    {
+        container_.push_back(tr);
     }
-    qDebug() << QString("%1 %2 ").arg(name_).arg(container_.trigrams_.size()) << QThread::currentThreadId();
-}
-
-void IndexedFile::interruptIndexing()
-{
-
-}
-
-bool IndexedFile::checkForMagicNumbers(magic_t &file_magic)
-{
-    return (!(file_magic.number == magic_rpm.number
-            || file_magic.number == magic_class.number
-            || file_magic.number == magic_mp3_idtv1.number
-            || file_magic.number == magic_mp3_idtv2.number
-            || file_magic.number == magic_flac.number
-            || file_magic.number == magic_elf.number
-            || file_magic.number == magic_mkv.number));
+    return true;
 }
 
 void IndexedFile::clearData()
@@ -107,9 +137,9 @@ void IndexedFile::clearData()
 
 }
 
-QString IndexedFile::appendPath(QString path1, QString path2)
+QString IndexedFile::getFullPath() const
 {
-    return QDir::cleanPath(path1 + QDir::separator() + path2);
+    return QDir::cleanPath(path_ + QDir::separator() + name_);
 }
 
 }

@@ -30,19 +30,23 @@ QMAKE_CXXFLAGS_RELEASE += -O3
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    fileselection.cpp \
     indexedfile.cpp \
     patternsearcher.cpp \
     trigramcontainer.cpp \
-    patterncontainer.cpp
+    fileslistview.cpp \
+    fileslistviewmodel.cpp \
+    textviewer.cpp \
+    searcherutil.cpp
 
 HEADERS += \
         mainwindow.h \
-    fileselection.h \
     indexedfile.h \
     patternsearcher.h \
     trigramcontainer.h \
-    patterncontainer.h
+    fileslistview.h \
+    fileslistviewmodel.h \
+    textviewer.h \
+    searcherutil.h
 
 FORMS += \
         mainwindow.ui

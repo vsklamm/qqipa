@@ -1,5 +1,6 @@
-#include "fileselection.h"
+#include "searcherutil.h"
 #include "indexedfile.h"
+#include "patternsearcher.h"
 
 #include <bitset>
 #include <string>
@@ -13,27 +14,35 @@
 
 namespace qqipa {
 
-FileSelection::FileSelection()
+SearcherUtil::SearcherUtil()
     : was_canceled(false)
 {
     connect(&files_to_search_watcher, SIGNAL(finished()), this, SLOT(indexFoundFiles()));
     connect(&indexer_watcher, SIGNAL(finished()), this, SLOT(onIndexingFinished()));
 }
 
-FileSelection::~FileSelection()
+SearcherUtil::~SearcherUtil()
 {
 
 }
 
-void FileSelection::startSearch(std::set<QString> &start_dirs, bool recursively)
+void SearcherUtil::startIndexing(std::set<QString> &start_dirs, bool recursively)
 {
     qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
 
-    files_to_search_future = QtConcurrent::run(this, &FileSelection::processDirectories, start_dirs, recursively);
+    files_to_search_future = QtConcurrent::run(this, &SearcherUtil::processDirectories, start_dirs, recursively);
     files_to_search_watcher.setFuture(files_to_search_future);
 }
 
-std::vector<QString> FileSelection::processDirectories(std::set<QString> &start_dirs, bool recursively)
+void SearcherUtil::startSearching(QString pattern)
+{
+    qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
+
+    PatternSearcher patternSeacher;
+    patternSeacher.search(pattern, indexedFileList);
+}
+
+std::vector<QString> SearcherUtil::processDirectories(std::set<QString> &start_dirs, bool recursively)
 {
     qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
     clearData();
@@ -45,7 +54,7 @@ std::vector<QString> FileSelection::processDirectories(std::set<QString> &start_
         {
             if (was_canceled)
             {
-                emit indexingFinished(result.size());
+                emit indexingFinished(int(result.size()));
                 return {};
             }
 
@@ -56,7 +65,7 @@ std::vector<QString> FileSelection::processDirectories(std::set<QString> &start_
             {
                 if (was_canceled)
                 {
-                    emit indexingFinished(result.size());
+                    emit indexingFinished(int(result.size()));
                     return result;
                 }
 
@@ -82,35 +91,44 @@ std::vector<QString> FileSelection::processDirectories(std::set<QString> &start_
     }
 }
 
-void FileSelection::indexFoundFiles()
+void SearcherUtil::indexFoundFiles()
 {
-    indexer_future = QtConcurrent::run(this, &FileSelection::indexPortion);
+    indexer_future = QtConcurrent::run(this, &SearcherUtil::indexPortion);
     indexer_watcher.setFuture(indexer_future);
 }
 
-void FileSelection::indexPortion()
+void SearcherUtil::indexPortion()
 {
     for (auto& path : files_to_search_future.result()) {
         auto file = IndexedFile(QFileInfo(path));
-        file.calculateIndex();
+        auto not_binary = file.calculateIndex();
+        if (not_binary) {
+            indexedFileList.append(file);
+            emit newIndexedFiles(indexedFileList.size(), { QString(path + "  ===  " + QString::number(file.container_.size())) });
+        }
     }
 }
 
-void FileSelection::interruptProcessing()
+void SearcherUtil::interruptIndexing()
+{
+    was_canceled = true;
+}
+
+void SearcherUtil::interruptSearching()
 {
 
 }
 
-void FileSelection::onIndexingFinished()
+void SearcherUtil::onIndexingFinished()
 {
     qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
-    emit indexingFinished(0);
+    emit indexingFinished(indexedFileList.size());
 }
 
-void FileSelection::clearData()
+void SearcherUtil::clearData()
 {
     was_canceled = false;
-    // TODO: what about Future?
+    indexedFileList.clear();
 }
 
 }
