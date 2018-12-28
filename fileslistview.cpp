@@ -11,7 +11,8 @@ FilesListView::~FilesListView()
 
 }
 
-void FilesListView::paintEvent(QPaintEvent *e) {
+void FilesListView::paintEvent(QPaintEvent *e)
+{
     QListView::paintEvent(e);
     if (model() && model()->rowCount(rootIndex()) > 0)
     {

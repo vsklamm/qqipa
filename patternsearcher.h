@@ -17,7 +17,7 @@ public:
     PatternSearcher();
 
 signals:
-    void searchingFinished(int found_files);
+    void searchingFinished(fsize_t found_files);
     void newFoundFiles(int files_completed, std::vector<QString> found_files);
 
 public slots:
@@ -26,8 +26,6 @@ public slots:
     void findMathingTrigrams();
 
     void interruptSearching();
-
-    void onSearchingFinished();
 
 private:
     TrigramContainer getPatternTrigrams(const std::string &pattern_std);

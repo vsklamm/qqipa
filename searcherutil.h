@@ -23,7 +23,8 @@ public:
     ~SearcherUtil();
 
 signals:
-    void indexingFinished(int found_files);
+    void indexingFinished(fsize_t found_files);
+    void searchingFinished(fsize_t found_files);
     void newIndexedFiles(int files_completed, std::vector<QString> found_files);
 
 public slots:
@@ -34,6 +35,7 @@ public slots:
     void interruptSearching();
 
     void onIndexingFinished();
+    void onSearchingFinished(fsize_t found_files);
 
 private slots:
     std::vector<QString> processDirectories(std::set<QString> &start_dirs, bool recursively = true);

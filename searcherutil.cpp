@@ -40,6 +40,7 @@ void SearcherUtil::startSearching(QString pattern)
 
     PatternSearcher patternSeacher;
     patternSeacher.search(pattern, indexedFileList);
+    connect(&patternSeacher, &PatternSearcher::searchingFinished, this, &SearcherUtil::onSearchingFinished);
 }
 
 std::vector<QString> SearcherUtil::processDirectories(std::set<QString> &start_dirs, bool recursively)
@@ -99,10 +100,12 @@ void SearcherUtil::indexFoundFiles()
 
 void SearcherUtil::indexPortion()
 {
-    for (auto& path : files_to_search_future.result()) {
+    for (auto& path : files_to_search_future.result())
+    {
         auto file = IndexedFile(QFileInfo(path));
         auto not_binary = file.calculateIndex();
-        if (not_binary) {
+        if (not_binary)
+        {
             indexedFileList.append(file);
             emit newIndexedFiles(indexedFileList.size(), { QString(path + "  ===  " + QString::number(file.container_.size())) });
         }
@@ -123,6 +126,11 @@ void SearcherUtil::onIndexingFinished()
 {
     qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
     emit indexingFinished(indexedFileList.size());
+}
+
+void SearcherUtil::onSearchingFinished(fsize_t found_files)
+{
+    emit searchingFinished(found_files);
 }
 
 void SearcherUtil::clearData()

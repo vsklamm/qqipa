@@ -24,20 +24,14 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    QCommonStyle style;
-    ui->actionSelectDirectory->setIcon(style.standardIcon(QCommonStyle::SP_DialogOpenButton));
-    ui->actionStartSearch->setIcon(style.standardIcon(QCommonStyle::SP_MediaPlay));
-
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Up), this, SLOT(moveSplitterUp()));
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Down), this, SLOT(moveSplitterDown()));
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Left), this, SLOT(moveSplitterLeft()));
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Right), this, SLOT(moveSplitterRight()));
 
-    connect(ui->actionSelectDirectory, &QAction::triggered, this, &MainWindow::selectDirectory);
-    connect(ui->actionStartSearch, &QAction::triggered, this, &MainWindow::startSearch);
-
     connect(fileSelection.get(), &SearcherUtil::indexingFinished, this, &MainWindow::on_indexingFinished);
     connect(fileSelection.get(), &SearcherUtil::newIndexedFiles, this, &MainWindow::on_updateFileList);
+    connect(fileSelection.get(), &SearcherUtil::searchingFinished, this, &MainWindow::on_searchingFinished);
 
     labelSearching = std::make_unique<QLabel>(ui->statusBar);
     labelSearching->setAlignment(Qt::AlignRight);
@@ -53,45 +47,79 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->directoriesTable->horizontalHeader()->hide();
     ui->directoriesTable->verticalHeader()->hide();
 
+    ui->searchButton->setEnabled(false);
+    ui->indexDirectoriesButton->setEnabled(false);
+
     QThreadPool::globalInstance()->setMaxThreadCount(std::max(2, int(std::thread::hardware_concurrency())));
 }
 
 MainWindow::~MainWindow()
 {
+
 }
 
 void MainWindow::on_addDirButton_clicked()
 {
-    selectDirectory();
-}
-
-void MainWindow::selectDirectory()
-{
     QString directory = QFileDialog::getExistingDirectory(this, "Select Directory for Scanning",
                                                           QString(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if (directory.size() != 0) {
-        addDirectory(directory);
+        auto added = addDirectory(directory);
+        if (added)
+        {
+            ui->indexDirectoriesButton->setEnabled(true);
+        }
     }
 }
 
-void MainWindow::addDirectory(const QString &directory)
+void MainWindow::on_deleteDirButton_clicked()
+{
+
+}
+
+void MainWindow::on_searchButton_clicked()
+{
+    auto pattern = ui->patternTextEdit->toPlainText();
+
+    if (pattern.size() > 0) {
+        taskTimer->restart();
+        fileSelection->startSearching(pattern);
+    }
+}
+
+void MainWindow::on_indexDirectoriesButton_clicked()
+{
+    qDebug() << QString(__func__) << QThread::currentThreadId();
+    ui->searchButton->setEnabled(false);
+
+
+    if (start_directories.size() != 0) {
+        filesListModel->removeRows(0, filesListModel->rowCount());
+
+        taskTimer->restart();
+        fileSelection->startIndexing(start_directories, true);
+    }
+}
+
+bool MainWindow::addDirectory(const QString &directory)
 {
     ui->directoriesTable->insertRow(ui->directoriesTable->rowCount());
 
-    QTableWidgetItem * item = new QTableWidgetItem();
+    auto * item = new QTableWidgetItem();
     ui->directoriesTable->setItem(ui->directoriesTable->rowCount() - 1, 0, item);
 
-    QProgressBar * new_prog_bar = new QProgressBar();
+    auto * new_prog_bar = new QProgressBar();
     new_prog_bar->setValue(0);
     new_prog_bar->setFormat(directory);
     ui->directoriesTable->setCellWidget(ui->directoriesTable->rowCount() - 1, 0, new_prog_bar);
 
     start_directories.insert(directory);
+
+    return true;
 }
 
 void MainWindow::removeDirectory(int row)
 {
-    QString name = getDirectoryName(row);
+    auto name = getDirectoryName(row);
     start_directories.erase(name);
     ui->directoriesTable->removeRow(row);
     // TODO: what if indexing
@@ -109,32 +137,31 @@ bool MainWindow::isSubdirectory(int first_row, int second_row)
 void MainWindow::on_indexingFinished(int found_files)
 {
     ui->statusBar->clearMessage();
-    ui->statusBar->showMessage(QString("Search complete. Elapsed time: %1 ms").arg(taskTimer->elapsed()));
+    ui->statusBar->showMessage(QString("Indexing complete. Elapsed time: %1 ms").arg(taskTimer->elapsed()));
     labelSearching->setText(QString("Files found: %1").arg(found_files));
 
     for (int i = 0; i < ui->directoriesTable->rowCount(); ++i) {
         // static_cast<QProgressBar*>(ui->directoriesTable->cellWidget(i, 0))->setValue(0);
     }
+
+    ui->searchButton->setEnabled(true);
+}
+
+void MainWindow::on_searchingFinished(int found_files)
+{
+    ui->statusBar->clearMessage();
+    ui->statusBar->showMessage(QString("Searching complete. Elapsed time: %1 ms").arg(taskTimer->elapsed()));
+    labelSearching->setText(QString("Files found: %1").arg(found_files));
+
+    ui->searchButton->setEnabled(true);
 }
 
 void MainWindow::on_updateFileList(int completed_files, std::vector<QString> indexed_files)
 {
-    // labelDupes->setText(QString("Files found: %1").arg(completed_files));
-
     for (auto& name : indexed_files) {
         *filesListModel << name;
-     }
-    labelSearching->setText(QString("Files found: %1").arg(completed_files));
-}
-
-void MainWindow::startSearch()
-{
-    qDebug() << QString(__func__) << " from Main thread: " << QThread::currentThreadId();
-
-    if (start_directories.size() != 0) {
-        taskTimer->restart();
-        fileSelection->startIndexing(start_directories, true);
     }
+    labelSearching->setText(QString("Files found: %1").arg(completed_files));
 }
 
 void MainWindow::moveSplitterUp()
@@ -164,4 +191,5 @@ void MainWindow::moveSplitter(QSplitter * splitter, int direction)
     currentSizes[1] -= 8 * direction;
     splitter->setSizes(currentSizes);
 }
+
 

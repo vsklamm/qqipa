@@ -32,15 +32,8 @@ public:
 signals:
 
 public slots:
-    void startSearch();
-    void selectDirectory();
-    void addDirectory(const QString &directory);
-    void removeDirectory(int row);
-
-    QString getDirectoryName(int row);
-    bool isSubdirectory(int first_row, int second_row);
-
     void on_indexingFinished(int found_files);
+    void on_searchingFinished(int found_files);
     void on_updateFileList(int completed_files, std::vector<QString> indexed_files);
 
     void moveSplitterUp();
@@ -52,6 +45,11 @@ public:
     // methods
 
 private:
+    bool addDirectory(const QString &directory);
+    void removeDirectory(int row);
+
+    QString getDirectoryName(int row);
+    bool isSubdirectory(int first_row, int second_row);
     QString get_selected_directory();
     void moveSplitter(QSplitter * splitter, int direction);
 
@@ -61,9 +59,15 @@ public:
 private slots:
     void on_addDirButton_clicked();
 
+    void on_searchButton_clicked();
+
+    void on_indexDirectoriesButton_clicked();
+
+    void on_deleteDirButton_clicked();
+
 private:
-    // std::unique_ptr<Ui::MainWindow> ui;
-    Ui::MainWindow * ui;
+    std::unique_ptr<Ui::MainWindow> ui;
+    // Ui::MainWindow * ui;
     std::unique_ptr<QLabel> labelSearching;
     FilesListView * listFoundFiles;
     FilesListViewModel * filesListModel;
