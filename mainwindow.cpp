@@ -19,7 +19,7 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    fileSelection(new SearcherUtil),
+    searcherUtil(new SearcherUtil),
     taskTimer(new QElapsedTimer)
 {
     ui->setupUi(this);
@@ -29,20 +29,17 @@ MainWindow::MainWindow(QWidget *parent) :
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Left), this, SLOT(moveSplitterLeft()));
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Right), this, SLOT(moveSplitterRight()));
 
-    connect(fileSelection.get(), &SearcherUtil::indexingFinished, this, &MainWindow::on_indexingFinished);
-    connect(fileSelection.get(), &SearcherUtil::newIndexedFiles, this, &MainWindow::on_updateFileList);
-    connect(fileSelection.get(), &SearcherUtil::searchingFinished, this, &MainWindow::on_searchingFinished);
+    connect(searcherUtil.get(), &SearcherUtil::indexingFinished, this, &MainWindow::on_indexingFinished);
+    connect(searcherUtil.get(), &SearcherUtil::newIndexedFiles, this, &MainWindow::on_updateFileList);
+    connect(searcherUtil.get(), &SearcherUtil::searchingFinished, this, &MainWindow::on_searchingFinished);
 
     labelSearching = std::make_unique<QLabel>(ui->statusBar);
     labelSearching->setAlignment(Qt::AlignRight);
     labelSearching->setMinimumSize(labelSearching->sizeHint());
 
     ui->statusBar->addPermanentWidget(labelSearching.get());
-
-    listFoundFiles = new FilesListView(ui->splitter_2);
     filesListModel = new FilesListViewModel;
-    listFoundFiles->setModel(filesListModel);
-    ui->splitter_2->addWidget(listFoundFiles);
+    ui->listFoundFiles->setModel(filesListModel);
 
     ui->directoriesTable->horizontalHeader()->hide();
     ui->directoriesTable->verticalHeader()->hide();
@@ -60,7 +57,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_addDirButton_clicked()
 {
-    QString directory = QFileDialog::getExistingDirectory(this, "Select Directory for Scanning",
+    auto directory = QFileDialog::getExistingDirectory(this, "Select Directory for Scanning",
                                                           QString(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if (directory.size() != 0) {
         auto added = addDirectory(directory);
@@ -82,7 +79,7 @@ void MainWindow::on_searchButton_clicked()
 
     if (pattern.size() > 0) {
         taskTimer->restart();
-        fileSelection->startSearching(pattern);
+        searcherUtil->startSearching(pattern);
     }
 }
 
@@ -96,7 +93,7 @@ void MainWindow::on_indexDirectoriesButton_clicked()
         filesListModel->removeRows(0, filesListModel->rowCount());
 
         taskTimer->restart();
-        fileSelection->startIndexing(start_directories, true);
+        searcherUtil->startIndexing(start_directories, true);
     }
 }
 
@@ -112,15 +109,15 @@ bool MainWindow::addDirectory(const QString &directory)
     new_prog_bar->setFormat(directory);
     ui->directoriesTable->setCellWidget(ui->directoriesTable->rowCount() - 1, 0, new_prog_bar);
 
-    start_directories.insert(directory);
+    start_directories.push_back(directory);
 
     return true;
 }
 
 void MainWindow::removeDirectory(int row)
 {
-    auto name = getDirectoryName(row);
-    start_directories.erase(name);
+    // auto name = getDirectoryName(row);
+    start_directories.erase(start_directories.begin() + row);
     ui->directoriesTable->removeRow(row);
     // TODO: what if indexing
 }
@@ -159,7 +156,7 @@ void MainWindow::on_searchingFinished(int found_files)
 void MainWindow::on_updateFileList(int completed_files, std::vector<QString> indexed_files)
 {
     for (auto& name : indexed_files) {
-        *filesListModel << name;
+        filesListModel->append(name);
     }
     labelSearching->setText(QString("Files found: %1").arg(completed_files));
 }
@@ -186,10 +183,8 @@ void MainWindow::moveSplitterRight()
 
 void MainWindow::moveSplitter(QSplitter * splitter, int direction)
 {
-    QList<int> currentSizes = splitter->sizes();
+    auto currentSizes = splitter->sizes();
     currentSizes[0] += 8 * direction;
     currentSizes[1] -= 8 * direction;
     splitter->setSizes(currentSizes);
 }
-
-

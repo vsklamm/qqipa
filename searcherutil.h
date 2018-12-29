@@ -28,7 +28,7 @@ signals:
     void newIndexedFiles(int files_completed, std::vector<QString> found_files);
 
 public slots:
-    void startIndexing(std::set<QString> &start_dirs, bool recursively = true);
+    void startIndexing(std::vector<QString> &start_dirs, bool recursively = true);
     void startSearching(QString pattern);
 
     void interruptIndexing();
@@ -38,7 +38,7 @@ public slots:
     void onSearchingFinished(fsize_t found_files);
 
 private slots:
-    std::vector<QString> processDirectories(std::set<QString> &start_dirs, bool recursively = true);
+    std::vector<QString> processDirectories(std::vector<QString> &start_dirs, bool recursively = true);
     void indexFoundFiles();
     void indexPortion();
 
@@ -46,6 +46,7 @@ public:
     // methods
 
 private:
+    bool containsMagicNumbers();
     void clearData();
 
 public:

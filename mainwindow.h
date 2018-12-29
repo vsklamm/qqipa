@@ -54,7 +54,7 @@ private:
     void moveSplitter(QSplitter * splitter, int direction);
 
 public:
-    std::set<QString> start_directories;
+    std::vector<QString> start_directories;
 
 private slots:
     void on_addDirButton_clicked();
@@ -69,10 +69,9 @@ private:
     std::unique_ptr<Ui::MainWindow> ui;
     // Ui::MainWindow * ui;
     std::unique_ptr<QLabel> labelSearching;
-    FilesListView * listFoundFiles;
     FilesListViewModel * filesListModel;
 
-    std::unique_ptr<SearcherUtil> fileSelection;
+    std::unique_ptr<SearcherUtil> searcherUtil;
     std::unique_ptr<QElapsedTimer> taskTimer;
 };
 

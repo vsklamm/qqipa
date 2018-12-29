@@ -1,6 +1,7 @@
 #include "searcherutil.h"
 #include "indexedfile.h"
 #include "patternsearcher.h"
+#include "magic_number.h"
 
 #include <bitset>
 #include <string>
@@ -26,7 +27,7 @@ SearcherUtil::~SearcherUtil()
 
 }
 
-void SearcherUtil::startIndexing(std::set<QString> &start_dirs, bool recursively)
+void SearcherUtil::startIndexing(std::vector<QString> &start_dirs, bool recursively)
 {
     qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
 
@@ -43,12 +44,14 @@ void SearcherUtil::startSearching(QString pattern)
     connect(&patternSeacher, &PatternSearcher::searchingFinished, this, &SearcherUtil::onSearchingFinished);
 }
 
-std::vector<QString> SearcherUtil::processDirectories(std::set<QString> &start_dirs, bool recursively)
+std::vector<QString> SearcherUtil::processDirectories(std::vector<QString> &start_dirs, bool recursively)
 {
     qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
     clearData();
 
+    using namespace magic_numbers;
     std::vector<QString> result{};
+    char buffer[12];
     try
     {
         for (auto& current_path : start_dirs)
@@ -74,11 +77,17 @@ std::vector<QString> SearcherUtil::processDirectories(std::set<QString> &start_d
                 const auto file_info = it.fileInfo();
                 if (!file_info.isSymLink()) // TODO: what about them?
                 {
-                    if (QFile(file).open(QIODevice::ReadOnly)) { // TODO: too sloooow work with strings and files
+                    QFile read_file(file);
+                    if (read_file.open(QIODevice::ReadOnly)) { // TODO: too sloooow work with strings and files
                         auto size = file_info.size();
                         if (size < minsize)
                             continue;
-                        result.push_back(file);
+                        if (!(read_file.read(buffer, max_magic_bytes) == max_magic_bytes
+                                && std::find_if(mnumbers.begin(), mnumbers.end(),
+                                                [=](magic_number& magic_n) {
+                                                return magic_n.find(buffer); }) != mnumbers.end())) {
+                            result.push_back(file);
+                        }
                     }
                 }
             }
@@ -107,9 +116,15 @@ void SearcherUtil::indexPortion()
         if (not_binary)
         {
             indexedFileList.append(file);
-            emit newIndexedFiles(indexedFileList.size(), { QString(path + "  ===  " + QString::number(file.container_.size())) });
+            emit newIndexedFiles(indexedFileList.size(),
+            { file.getFullPath() + " === " + QString::number(file.container_.size())});
         }
     }
+}
+
+bool SearcherUtil::containsMagicNumbers()
+{
+
 }
 
 void SearcherUtil::interruptIndexing()

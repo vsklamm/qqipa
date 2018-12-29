@@ -36,7 +36,8 @@ SOURCES += \
     fileslistview.cpp \
     fileslistviewmodel.cpp \
     textviewer.cpp \
-    searcherutil.cpp
+    searcherutil.cpp \
+    magic_number.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -46,7 +47,8 @@ HEADERS += \
     fileslistview.h \
     fileslistviewmodel.h \
     textviewer.h \
-    searcherutil.h
+    searcherutil.h \
+    magic_number.h
 
 FORMS += \
         mainwindow.ui

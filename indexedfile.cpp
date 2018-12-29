@@ -12,8 +12,6 @@
 
 namespace qqipa {
 
-using namespace magic_numbers; // TODO: Is it bad?
-
 IndexedFile::IndexedFile(QString file_name, QString file_path, fsize_t size)
     : name_(file_name), path_(file_path), size_(size)
 {
@@ -41,13 +39,6 @@ void IndexedFile::interruptIndexing()
 
 }
 
-bool IndexedFile::containsMagicNumber(magic_t &file_magic)
-{
-    return std::find_if(mnumbers.begin(), mnumbers.end(), [=](auto& magic_n) {
-        return file_magic.number == magic_n.second.number;
-    }) != mnumbers.end();
-}
-
 bool IndexedFile::calculateSmallFile()
 {
     QFile read_file(getFullPath());
@@ -60,12 +51,6 @@ bool IndexedFile::calculateSmallFile()
     std::unordered_set<trigram_t> temp;
     if (file_ptr != nullptr)
     {
-        magic_t file_magic;
-        std::copy(file_ptr, file_ptr + std::min(size_t(size_), max_magic_bytes), file_magic.bytes);
-        if (containsMagicNumber(file_magic)) {
-            return false;
-        }
-
         trigram_t mask = 0x00FFFFFF;
         trigram_t x = (trigram_t(0[file_ptr]) << 8) | (trigram_t(1[file_ptr]));
         for (fsize_t i = 2; i < size_; ++i)
@@ -74,11 +59,8 @@ bool IndexedFile::calculateSmallFile()
             temp.insert(x);
         }
     }
-    container_.reserve(temp.size());
-    for (auto& tr : temp)
-    {
-        container_.push_back(tr);
-    }
+    container_.resize(temp.size());
+    std::copy(temp.begin(), temp.end(), container_.begin());
     return true;
 }
 
@@ -90,29 +72,18 @@ bool IndexedFile::calculateLargeFile()
     QFile read_file(getFullPath());
     if (read_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 
-        if (read_file.read(buffer, max_magic_bytes) == max_magic_bytes)
-        {
-            magic_t file_magic;
-            std::copy(buffer, buffer + max_magic_bytes, file_magic.bytes);
-            if (containsMagicNumber(file_magic)) {
-                return false;
-            }
-        }
-
-        temp.reserve(size_t(0.35 * double(read_file.size()))); // TODO: ???? ???? ????
-
         trigram_t mask = 0x00FFFFFF;
-        trigram_t x = (trigram_t(buffer[0]) << 16) | (trigram_t(buffer[1]) << 8) | (trigram_t(buffer[2]));
-        temp.insert(x);
-        x = (((x << 8) & mask) | trigram_t(buffer[3])); // TODO: what if only 3 chars
-        temp.insert(x);
+        temp.reserve(size_t(0.35 * double(read_file.size())));
 
+        read_file.read(buffer, 2);
+        trigram_t x = (trigram_t(uchar(buffer[0])) << 8) | (trigram_t(uchar(buffer[1])));
+        temp.insert(x);
         while (!read_file.atEnd())
         {
             auto len = read_file.read(buffer, buffer_size);
-            for (int i = 0; i < len; ++i)
+            for (int i = 2; i < len; ++i)
             {
-                x = (((x << 8) & mask) | trigram_t(buffer[i]));
+                x = (((x << 8) & mask) | trigram_t(uchar(buffer[i])));
                 temp.insert(x);
             }
             if (temp.size() > evil_number)
