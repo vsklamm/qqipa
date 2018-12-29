@@ -25,7 +25,7 @@ public:
 signals:
     void indexingFinished(fsize_t found_files);
     void searchingFinished(fsize_t found_files);
-    void newIndexedFiles(int files_completed, std::vector<QString> found_files);
+    void newIndexedFiles(int files_completed, std::vector<std::pair<fsize_t, QString>> found_files);
 
 public slots:
     void startIndexing(std::vector<QString> &start_dirs, bool recursively = true);

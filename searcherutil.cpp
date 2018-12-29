@@ -117,7 +117,7 @@ void SearcherUtil::indexPortion()
         {
             indexedFileList.append(file);
             emit newIndexedFiles(indexedFileList.size(),
-            { file.getFullPath() + " === " + QString::number(file.container_.size())});
+            { {file.container_.size(), file.getFullPath()} });
         }
     }
 }

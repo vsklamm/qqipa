@@ -86,10 +86,10 @@ TrigramContainer PatternSearcher::getPatternTrigrams(const std::string &pattern_
     {
         result.reserve(pattern_std.size() - 2);
 
-        trigram_t x = (trigram_t(pattern_std[0]) << 8) | trigram_t(pattern_std[1]);
+        trigram_t x = (trigram_t(uchar(pattern_std[0])) << 8) | trigram_t(uchar(pattern_std[1]));
         for (size_t i = 2; i < pattern_std.size(); ++i)
         {
-            x = (((x << 8) & tbytes_mask) | trigram_t(pattern_std[i]));
+            x = (((x << 8) & tbytes_mask) | trigram_t(uchar(pattern_std[i])));
             result.push_back(x);
         }
         result.resize(size_t(std::distance(result.begin(), std::unique(result.begin(), result.end()))));

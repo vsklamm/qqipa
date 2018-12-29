@@ -11,7 +11,7 @@ namespace qqipa {
 
 using fsize_t = int64_t;
 
-constexpr size_t buffer_size = 1 << 15;
+constexpr size_t buffer_size = 1 << 14;
 constexpr size_t evil_number = 200000;
 
 struct IndexedFile

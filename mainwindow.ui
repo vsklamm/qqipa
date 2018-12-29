@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>qqipa</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../../../../media/vsklamm/Ext/download/pixil-frame-0 (4).png</normaloff>../../../../media/vsklamm/Ext/download/pixil-frame-0 (4).png</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -84,6 +88,12 @@
               </property>
               <item>
                <widget class="QTextEdit" name="patternTextEdit">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="maximumSize">
                  <size>
                   <width>16777215</width>
@@ -97,6 +107,27 @@
               </item>
               <item>
                <widget class="QPushButton" name="searchButton">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>80</width>
+                  <height>40</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QPushButton
+{
+  color: white;
+  background-color: #d50000;
+  border-width: 0px;
+  border-radius: 3px;
+}</string>
+                </property>
                 <property name="text">
                  <string>Search</string>
                 </property>
@@ -135,7 +166,7 @@
               <item>
                <widget class="QPushButton" name="deleteDirButton">
                 <property name="text">
-                 <string>Delete directory</string>
+                 <string>[ Delete directory ]</string>
                 </property>
                 <property name="shortcut">
                  <string>Ctrl+X</string>
@@ -154,7 +185,7 @@
                  </size>
                 </property>
                 <property name="text">
-                 <string>Add directory</string>
+                 <string>[ Add directory ]</string>
                 </property>
                 <property name="shortcut">
                  <string>Ctrl+N</string>
@@ -167,10 +198,13 @@
               <item>
                <widget class="QPushButton" name="indexDirectoriesButton">
                 <property name="text">
-                 <string>Index directories</string>
+                 <string>{ Index directories }</string>
                 </property>
                 <property name="shortcut">
                  <string>Ctrl+I</string>
+                </property>
+                <property name="flat">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
@@ -206,16 +240,12 @@
             </property>
            </column>
           </widget>
-          <widget class="FilesListView" name="listFoundFiles"/>
+          <widget class="FilesTableView" name="filesTableView"/>
          </widget>
         </item>
        </layout>
       </widget>
-      <widget class="TextViewer" name="plainTextEdit">
-       <property name="focusPolicy">
-        <enum>Qt::ClickFocus</enum>
-       </property>
-      </widget>
+      <widget class="TextViewer" name="plainTextEdit"/>
      </widget>
     </item>
    </layout>
@@ -248,9 +278,9 @@
    <header>textviewer.h</header>
   </customwidget>
   <customwidget>
-   <class>FilesListView</class>
-   <extends>QListView</extends>
-   <header>fileslistview.h</header>
+   <class>FilesTableView</class>
+   <extends>QTableView</extends>
+   <header>filestableview.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

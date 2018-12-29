@@ -2,8 +2,6 @@
 #define MAINWINDOW_H
 
 #include "searcherutil.h"
-#include "fileslistview.h"
-#include "fileslistviewmodel.h"
 #include "indexedfile.h"
 
 #include <QMainWindow>
@@ -12,6 +10,7 @@
 #include <QFileSystemWatcher>
 #include <QLabel>
 #include <QSplitter>
+#include <QStandardItemModel>
 
 #include <memory>
 
@@ -34,7 +33,7 @@ signals:
 public slots:
     void on_indexingFinished(int found_files);
     void on_searchingFinished(int found_files);
-    void on_updateFileList(int completed_files, std::vector<QString> indexed_files);
+    void on_updateFileTable(int completed_files, std::vector<std::pair<fsize_t, QString>> indexed_files);
 
     void moveSplitterUp();
     void moveSplitterDown();
@@ -46,6 +45,7 @@ public:
 
 private:
     bool addDirectory(const QString &directory);
+    void addTableRow(fsize_t entries, QString file_name);
     void removeDirectory(int row);
 
     QString getDirectoryName(int row);
@@ -69,7 +69,7 @@ private:
     std::unique_ptr<Ui::MainWindow> ui;
     // Ui::MainWindow * ui;
     std::unique_ptr<QLabel> labelSearching;
-    FilesListViewModel * filesListModel;
+    QStandardItemModel * model;
 
     std::unique_ptr<SearcherUtil> searcherUtil;
     std::unique_ptr<QElapsedTimer> taskTimer;

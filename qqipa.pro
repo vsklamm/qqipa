@@ -33,22 +33,20 @@ SOURCES += \
     indexedfile.cpp \
     patternsearcher.cpp \
     trigramcontainer.cpp \
-    fileslistview.cpp \
-    fileslistviewmodel.cpp \
     textviewer.cpp \
     searcherutil.cpp \
-    magic_number.cpp
+    magic_number.cpp \
+    filestableview.cpp
 
 HEADERS += \
         mainwindow.h \
     indexedfile.h \
     patternsearcher.h \
     trigramcontainer.h \
-    fileslistview.h \
-    fileslistviewmodel.h \
     textviewer.h \
     searcherutil.h \
-    magic_number.h
+    magic_number.h \
+    filestableview.h
 
 FORMS += \
         mainwindow.ui

@@ -1,4 +1,3 @@
-#include "fileslistview.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -30,16 +29,25 @@ MainWindow::MainWindow(QWidget *parent) :
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Right), this, SLOT(moveSplitterRight()));
 
     connect(searcherUtil.get(), &SearcherUtil::indexingFinished, this, &MainWindow::on_indexingFinished);
-    connect(searcherUtil.get(), &SearcherUtil::newIndexedFiles, this, &MainWindow::on_updateFileList);
+    connect(searcherUtil.get(), &SearcherUtil::newIndexedFiles, this, &MainWindow::on_updateFileTable);
     connect(searcherUtil.get(), &SearcherUtil::searchingFinished, this, &MainWindow::on_searchingFinished);
+    // connect(ui->tableWidget, &QTableWidget::cellDoubleClicked, this, SLOT(view_file(int, int)));
 
     labelSearching = std::make_unique<QLabel>(ui->statusBar);
     labelSearching->setAlignment(Qt::AlignRight);
     labelSearching->setMinimumSize(labelSearching->sizeHint());
 
     ui->statusBar->addPermanentWidget(labelSearching.get());
-    filesListModel = new FilesListViewModel;
-    ui->listFoundFiles->setModel(filesListModel);
+
+    model = new QStandardItemModel(0, 2, ui->filesTableView);
+    model->setHorizontalHeaderLabels({ "Entries", "File" });
+    ui->filesTableView->setModel(model);
+
+    ui->filesTableView->horizontalHeader()->setStretchLastSection(true);
+    ui->filesTableView->verticalHeader()->hide();
+    ui->filesTableView->setShowGrid(false);
+    ui->filesTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->filesTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
     ui->directoriesTable->horizontalHeader()->hide();
     ui->directoriesTable->verticalHeader()->hide();
@@ -90,8 +98,7 @@ void MainWindow::on_indexDirectoriesButton_clicked()
 
 
     if (start_directories.size() != 0) {
-        filesListModel->removeRows(0, filesListModel->rowCount());
-
+        // filesListModel->removeRows(0, filesListModel->rowCount());
         taskTimer->restart();
         searcherUtil->startIndexing(start_directories, true);
     }
@@ -114,6 +121,13 @@ bool MainWindow::addDirectory(const QString &directory)
     return true;
 }
 
+void MainWindow::addTableRow(fsize_t entries, QString file_name)
+{
+    model->insertRow(model->rowCount());
+    model->setItem(model->rowCount() - 1, 0, new QStandardItem(QString::number(entries)));
+    model->setItem(model->rowCount() - 1, 1, new QStandardItem(file_name));
+}
+
 void MainWindow::removeDirectory(int row)
 {
     // auto name = getDirectoryName(row);
@@ -128,7 +142,7 @@ QString MainWindow::getDirectoryName(int row) {
 
 bool MainWindow::isSubdirectory(int first_row, int second_row)
 {
-
+    return false;
 }
 
 void MainWindow::on_indexingFinished(int found_files)
@@ -153,13 +167,14 @@ void MainWindow::on_searchingFinished(int found_files)
     ui->searchButton->setEnabled(true);
 }
 
-void MainWindow::on_updateFileList(int completed_files, std::vector<QString> indexed_files)
+void MainWindow::on_updateFileTable(int completed_files, std::vector<std::pair<fsize_t, QString>> indexed_files)
 {
-    for (auto& name : indexed_files) {
-        filesListModel->append(name);
+    for (auto& file : indexed_files) {
+        addTableRow(file.first, file.second);
     }
     labelSearching->setText(QString("Files found: %1").arg(completed_files));
 }
+
 
 void MainWindow::moveSplitterUp()
 {
