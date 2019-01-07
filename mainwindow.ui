@@ -14,8 +14,8 @@
    <string>qqipa</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>../../../../media/vsklamm/Ext/download/pixil-frame-0 (4).png</normaloff>../../../../media/vsklamm/Ext/download/pixil-frame-0 (4).png</iconset>
+   <iconset resource="img.qrc">
+    <normaloff>:/icons/app_icon.png</normaloff>:/icons/app_icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -283,6 +283,8 @@
    <header>filestableview.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="img.qrc"/>
+ </resources>
  <connections/>
 </ui>

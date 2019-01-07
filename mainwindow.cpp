@@ -50,7 +50,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->filesTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
     ui->directoriesTable->horizontalHeader()->hide();
-    ui->directoriesTable->verticalHeader()->hide();
+    ui->directoriesTable->verticalHeader()->hide();        
+    ui->directoriesTable->setShowGrid(false);
+    ui->directoriesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
 
     ui->searchButton->setEnabled(false);
     ui->indexDirectoriesButton->setEnabled(false);

@@ -47,7 +47,7 @@ size_t TrigramContainer::size() const
 
 void TrigramContainer::makeAccessible()
 {
-    if (trigrams_.size() != 0) {
+    if (!trigrams_.empty()) {
         std::sort(trigrams_.begin(), trigrams_.end());
         accessible = true;
     }
