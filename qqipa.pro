@@ -5,7 +5,6 @@
 #-------------------------------------------------
 
 QT       += core gui\
-            widgets\
             concurrent
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -27,26 +26,28 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++17
 QMAKE_CXXFLAGS_RELEASE += -O3
 
-SOURCES += \
-        main.cpp \
+INCLUDEPATH += $$PWD/abseil
+
+SOURCES += main.cpp \
         mainwindow.cpp \
     indexedfile.cpp \
     patternsearcher.cpp \
     trigramcontainer.cpp \
     textviewer.cpp \
-    searcherutil.cpp \
     magic_number.cpp \
-    filestableview.cpp
+    filestableview.cpp \
+    controller.cpp \
+    directorywrapper.cpp
 
-HEADERS += \
-        mainwindow.h \
+HEADERS += mainwindow.h \
     indexedfile.h \
     patternsearcher.h \
     trigramcontainer.h \
     textviewer.h \
-    searcherutil.h \
     magic_number.h \
-    filestableview.h
+    filestableview.h \
+    controller.h \
+    directorywrapper.h
 
 FORMS += \
         mainwindow.ui

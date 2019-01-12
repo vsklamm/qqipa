@@ -9,9 +9,9 @@ TrigramContainer::TrigramContainer()
 
 }
 
-void TrigramContainer::reserve(size_t new_capacity)
+void TrigramContainer::reserve(size_t newCapacity)
 {
-    trigrams_.reserve(new_capacity);
+    trigrams.reserve(newCapacity);
 }
 
 std::vector<trigram_t>::iterator TrigramContainer::begin()
@@ -19,7 +19,7 @@ std::vector<trigram_t>::iterator TrigramContainer::begin()
     if (!accessible) {
         makeAccessible();
     }
-    return trigrams_.begin();
+    return trigrams.begin();
 }
 
 std::vector<trigram_t>::iterator TrigramContainer::end()
@@ -27,28 +27,28 @@ std::vector<trigram_t>::iterator TrigramContainer::end()
     if (!accessible) {
         makeAccessible();
     }
-    return trigrams_.end();
+    return trigrams.end();
 }
 
 void TrigramContainer::push_back(trigram_t element)
 {
-    trigrams_.push_back(element);
+    trigrams.push_back(element);
 }
 
-void TrigramContainer::resize(size_t new_size)
+void TrigramContainer::resize(size_t newSize)
 {
-    trigrams_.resize(new_size);
+    trigrams.resize(newSize);
 }
 
-size_t TrigramContainer::size() const
+size_t TrigramContainer::size() const noexcept
 {
-    return trigrams_.size();
+    return trigrams.size();
 }
 
 void TrigramContainer::makeAccessible()
 {
-    if (!trigrams_.empty()) {
-        std::sort(trigrams_.begin(), trigrams_.end());
+    if (!trigrams.empty()) {
+        std::sort(trigrams.begin(), trigrams.end());
         accessible = true;
     }
 }

@@ -5,6 +5,7 @@
 #include <QFutureWatcher>
 #include <QObject>
 
+#include "directorywrapper.h"
 #include "indexedfile.h"
 #include <regex>
 
@@ -21,25 +22,26 @@ signals:
     void newFoundFiles(int files_completed, std::vector<QString> found_files);
 
 public slots:
-    void search(const QString &pattern, QList<IndexedFile> &indexed_files);
-    fsize_t searchInFile(IndexedFile &indexedFile);
-    void findMathingTrigrams();
+    void search(const QString &pattern, QList<DirectoryWrapper *> &indexedDirectories);
 
     void interruptSearching();
 
+private slots:
+    fsize_t searchInFile(IndexedFile &indexedFile);
+
 private:
-    TrigramContainer getPatternTrigrams(const std::string &pattern_std);
+    TrigramContainer getPatternTrigrams(const std::string &patternStd);
     void clearData();
 
 private:
-    std::atomic<bool> was_canceled;
+    std::atomic<bool> wasCanceled;
 
-    std::string pattern_std;
+    std::string patternStd;
     TrigramContainer patternTrigrams;
-    std::regex pattern_regex;
+    std::regex patternRegex;
 
-    QFuture<std::vector<QString>> files_to_search_future;
-    QFutureWatcher<std::vector<QString>> files_to_search_watcher;
+    QFuture<std::vector<QString>> filesToSearchFuture;
+    QFutureWatcher<std::vector<QString>> filesToSearchWatcher;
     
 };
 

@@ -8,7 +8,7 @@ namespace qqipa {
 
 using trigram_t = uint_fast32_t;
 
-constexpr trigram_t tbytes_mask = 0x00FFFFFF;
+constexpr trigram_t tbytesMask = 0x00FFFFFF;
 
 struct TrigramContainer
 {
@@ -20,14 +20,14 @@ public:
     std::vector<trigram_t>::iterator end();
     void push_back(trigram_t element);
     void resize(size_t new_size);
-    size_t size() const;
+    size_t size() const noexcept;
 
 private:
     void makeAccessible();
 
 private:
     bool accessible = false;
-    std::vector<trigram_t> trigrams_;
+    std::vector<trigram_t> trigrams;
 
 };
 

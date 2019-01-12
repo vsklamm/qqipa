@@ -5,11 +5,9 @@
 
 #include <QFileInfo>
 
-#include <unordered_set>
-
 namespace qqipa {
 
-using fsize_t = int64_t;
+using fsize_t = std::int64_t;
 
 constexpr size_t buffer_size = 1 << 14;
 constexpr size_t evil_number = 200000;
@@ -18,9 +16,9 @@ struct IndexedFile
 {
 public:
     IndexedFile() = default;
-    IndexedFile(QString file_name, QString file_path, fsize_t size);
-    IndexedFile(QFileInfo qFile);
-    ~IndexedFile();
+    IndexedFile(const QString &fileName, const QString &filePath, const fsize_t &size);
+    IndexedFile(const QFileInfo &qFileInfo);
+    ~IndexedFile() = default;
 
 public:
     bool calculateIndex();

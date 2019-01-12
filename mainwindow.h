@@ -1,7 +1,7 @@
 ﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "searcherutil.h"
+#include "controller.h"
 #include "indexedfile.h"
 
 #include <QMainWindow>
@@ -29,12 +29,22 @@ public:
     ~MainWindow();
 
 signals:
+    void startIndexing(std::vector<QString> &startDirs);
+    void startSearching(QString pattern);
+
+    void interruptIndexing();
+    void interruptSearching();
+
+    void deleteDirectory(QString dirName);
 
 public slots:
+    void on_dirIsReadyToIndexing(QString dirName, fsize_t filesToIndex);
+    void on_updateFileTable(int completedFiles, std::vector<std::pair<fsize_t, QString>> indexedFiles);
+
     void on_indexingFinished(int found_files);
     void on_searchingFinished(int found_files);
-    void on_updateFileTable(int completed_files, std::vector<std::pair<fsize_t, QString>> indexed_files);
 
+private slots:
     void moveSplitterUp();
     void moveSplitterDown();
     void moveSplitterLeft();
@@ -50,11 +60,11 @@ private:
 
     QString getDirectoryName(int row);
     bool isSubdirectory(int first_row, int second_row);
-    QString get_selected_directory();
-    void moveSplitter(QSplitter * splitter, int direction);
+    QString getSelectedDirectory();
+    void moveSplitter(QSplitter *splitter, int direction);
 
 public:
-    std::vector<QString> start_directories;
+    std::vector<QString> startDirectories;
 
 private slots:
     void on_addDirButton_clicked();
@@ -69,9 +79,9 @@ private:
     std::unique_ptr<Ui::MainWindow> ui;
     // Ui::MainWindow * ui;
     std::unique_ptr<QLabel> labelSearching;
-    QStandardItemModel * model;
+    QStandardItemModel *model;
 
-    std::unique_ptr<SearcherUtil> searcherUtil;
+    std::unique_ptr<Controller> searcherController;
     std::unique_ptr<QElapsedTimer> taskTimer;
 };
 

@@ -8,25 +8,27 @@
 namespace qqipa {
 
 PatternSearcher::PatternSearcher()
-    : was_canceled(false)
+    : wasCanceled(false)
 {
 }
 
-void PatternSearcher::search(const QString &pattern, QList<IndexedFile> &indexed_files)
+void PatternSearcher::search(const QString &pattern, QList<DirectoryWrapper *> &indexedDirectories)
 {
-    pattern_std = pattern.toStdString();
-    patternTrigrams = getPatternTrigrams(pattern_std);
+    patternStd = pattern.toStdString();
+    patternTrigrams = getPatternTrigrams(patternStd);
 
-    const std::regex special_characters { R"([-[\]{}()*+?.,\^$|#\s\\])" };
-    pattern_regex.assign(std::regex_replace(pattern_std, special_characters, R"(\$&)"));
+    const std::regex specialCharacters { R"([-[\]{}()*+?.,\^$|#\s\\])" };
+    patternRegex.assign(std::regex_replace(patternStd, specialCharacters, R"(\$&)"));
 
     std::vector<std::pair<QString, fsize_t>> matches;
-    for (auto& cur_file : indexed_files)
-    {
-        auto result = searchInFile(cur_file);
-        if (result > 0)
+    for (auto& curDir : indexedDirectories) {
+        for (auto& curFile : curDir->indexedFileList)
         {
-            matches.emplace_back(cur_file.getFullPath(), result);
+            auto result = searchInFile(curFile);
+            if (result > 0)
+            {
+                matches.emplace_back(curFile.getFullPath(), result);
+            }
         }
     }
     emit searchingFinished(matches.size());
@@ -34,62 +36,56 @@ void PatternSearcher::search(const QString &pattern, QList<IndexedFile> &indexed
 
 fsize_t PatternSearcher::searchInFile(IndexedFile &indexedFile)
 {
-    bool good = true;
+    bool trigrContains = true;
     for (auto x: patternTrigrams) {
         if (std::lower_bound(indexedFile.container_.begin(), indexedFile.container_.end(), x) == indexedFile.container_.end()) {
-            good = false;
+            trigrContains = false;
             break;
         }
     }
-    if (!good)
-        return 0;
+    if (!trigrContains) return 0;
 
     fsize_t count = 0;
 
-    QFile read_file(indexedFile.getFullPath());
-    if (read_file.open(QIODevice::ReadOnly | QIODevice::Text))
+    QFile readFile(indexedFile.getFullPath());
+    if (readFile.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        std::regex r(pattern_std);
+        std::regex r(patternStd);
 
-        const int buffer_size = 1024 * 32;
-        const fsize_t pattern_size = fsize_t(pattern_std.size());
-        char buffer[buffer_size + pattern_size - 1];
+        const int bufferSize = 1024 * 32;
+        const fsize_t patternSize = fsize_t(patternStd.size());
+        char buffer[bufferSize + patternSize - 1];
 
-        read_file.read(buffer, pattern_size - 1);
+        readFile.read(buffer, patternSize - 1);
 
-        while (!read_file.atEnd())
+        while (!readFile.atEnd())
         {
-            long long len = read_file.read(buffer + pattern_size - 1, buffer_size);
+            long long len = readFile.read(buffer + patternSize - 1, bufferSize);
 
-            auto match_count = uint64_t(std::distance(std::regex_iterator<char *>(buffer, buffer + pattern_size - 1 + len, r), std::regex_iterator<char *>()));
-            count += match_count;
-            std::copy(buffer + len, buffer + pattern_size - 1 + len, buffer);
+            auto matchCount = uint64_t(std::distance(std::regex_iterator<char *>(buffer, buffer + patternSize - 1 + len, r), std::regex_iterator<char *>()));
+            count += matchCount;
+            std::copy(buffer + len, buffer + patternSize - 1 + len, buffer);
         }
     }
     return count;
 }
 
-void PatternSearcher::findMathingTrigrams()
-{
-
-}
-
 void PatternSearcher::interruptSearching()
 {
-    was_canceled = true;
+    wasCanceled = true;
 }
 
-TrigramContainer PatternSearcher::getPatternTrigrams(const std::string &pattern_std)
+TrigramContainer PatternSearcher::getPatternTrigrams(const std::string &patternStd)
 {
     TrigramContainer result;
-    if (pattern_std.size() > 2)
+    if (patternStd.size() > 2)
     {
-        result.reserve(pattern_std.size() - 2);
+        result.reserve(patternStd.size() - 2);
 
-        trigram_t x = (trigram_t(uchar(pattern_std[0])) << 8) | trigram_t(uchar(pattern_std[1]));
-        for (size_t i = 2; i < pattern_std.size(); ++i)
+        trigram_t x = (trigram_t(uchar(patternStd[0])) << 8) | trigram_t(uchar(patternStd[1]));
+        for (size_t i = 2; i < patternStd.size(); ++i)
         {
-            x = (((x << 8) & tbytes_mask) | trigram_t(uchar(pattern_std[i])));
+            x = (((x << 8) & tbytesMask) | trigram_t(uchar(patternStd[i])));
             result.push_back(x);
         }
         result.resize(size_t(std::distance(result.begin(), std::unique(result.begin(), result.end()))));
@@ -99,7 +95,7 @@ TrigramContainer PatternSearcher::getPatternTrigrams(const std::string &pattern_
 
 void PatternSearcher::clearData()
 {
-    was_canceled = false;
+    wasCanceled = false;
 }
 
 }
