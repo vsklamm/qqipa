@@ -4,6 +4,8 @@
 int main(int argc, char *argv[])
 {
     qRegisterMetaType<std::vector<std::pair<fsize_t, QString>>>("std::vector<std::pair<fsize_t, QString>>");
+    qRegisterMetaType<size_t>("size_t");
+    qRegisterMetaType<fsize_t>("fsize_t");
 
     QApplication a(argc, argv);
     MainWindow w;

@@ -12,7 +12,7 @@ PatternSearcher::PatternSearcher()
 {
 }
 
-void PatternSearcher::search(const QString &pattern, QList<DirectoryWrapper *> &indexedDirectories)
+void PatternSearcher::search(const QString &pattern, const std::vector<DirectoryWrapper *> &indexedDirectories)
 {
     patternStd = pattern.toStdString();
     patternTrigrams = getPatternTrigrams(patternStd);

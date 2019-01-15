@@ -5,7 +5,7 @@
 #include <QPlainTextEdit>
 #include <QWidget>
 
-class TextViewer : public QPlainTextEdit
+struct TextViewer : public QPlainTextEdit
 {
     Q_OBJECT
 public:

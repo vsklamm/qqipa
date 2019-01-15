@@ -9,8 +9,8 @@ namespace qqipa {
 
 using fsize_t = std::int64_t;
 
-constexpr size_t buffer_size = 1 << 14;
-constexpr size_t evil_number = 200000;
+constexpr size_t bufferSize = 1 << 14;
+constexpr size_t evilNumber = 200000;
 
 struct IndexedFile
 {
@@ -28,9 +28,8 @@ public:
     void indexingFinished();
 
 private:
-    bool calculateSmallFile();
-    bool calculateLargeFile();
-    void clearData();
+    inline bool calculateSmallFile();
+    inline bool calculateLargeFile();
 
 public:
     QString name_;
@@ -40,8 +39,8 @@ public:
     TrigramContainer container_;
 
 private:
-    static const int minsize = 1;
-    static const int small_large_size = 64 * 1024;
+    static const int minSize = 1;
+    static const int smallLargeSize = 64 * 1024;
 };
 
 }

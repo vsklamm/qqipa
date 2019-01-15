@@ -3,19 +3,15 @@
 #include <QDebug>
 #include <QDir>
 #include <QDirIterator>
-#include <QThread>
-#include <QtConcurrent/QtConcurrentMap>
-#include <QList>
 
 #include <algorithm>
 #include <bitset>
 
 #include "absl/container/flat_hash_set.h"
-#include <unordered_set>
 
 namespace qqipa {
 
-using trigrams_t = absl::flat_hash_set<trigram_t>; // std::unordered_set<trigram_t>; //
+using trigrams_t = absl::flat_hash_set<trigram_t>; // std::unordered_set<trigram_t>;
 
 IndexedFile::IndexedFile(const QString &fileName, const QString &filePath, const fsize_t &size)
     : name_(fileName), path_(filePath), size_(size)
@@ -31,7 +27,7 @@ IndexedFile::IndexedFile(const QFileInfo &qFileInfo)
 
 bool IndexedFile::calculateIndex()
 {
-    return (size_ < small_large_size) ? calculateSmallFile() : calculateLargeFile();
+    return (size_ < smallLargeSize) ? calculateSmallFile() : calculateLargeFile();
 }
 
 bool IndexedFile::calculateSmallFile()
@@ -61,8 +57,8 @@ bool IndexedFile::calculateSmallFile()
 
 bool IndexedFile::calculateLargeFile()
 {
-    char buffer[buffer_size];
-    trigrams_t temp;
+    char buffer[bufferSize];
+    trigrams_t trigrams_set;
 
     QFile read_file(getFullPath());
     if (read_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -71,16 +67,16 @@ bool IndexedFile::calculateLargeFile()
 
         read_file.read(buffer, 2);
         trigram_t x = (trigram_t(uchar(buffer[0])) << 8) | (trigram_t(uchar(buffer[1])));
-        temp.insert(x);
+        trigrams_set.insert(x);
         while (!read_file.atEnd())
         {
-            const auto len = read_file.read(buffer, buffer_size);
+            const auto len = read_file.read(buffer, bufferSize);
             for (int i = 2; i < len; ++i)
             {
                 x = (((x << 8) & mask) | trigram_t(uchar(buffer[i])));
-                temp.insert(x);
+                trigrams_set.insert(x);
             }
-            if (temp.size() > evil_number)
+            if (trigrams_set.size() > evilNumber)
             {
                 read_file.close();
                 return false;
@@ -89,8 +85,8 @@ bool IndexedFile::calculateLargeFile()
         read_file.close();
     }
 
-    container_.reserve(temp.size());
-    for (auto& tr : temp)
+    container_.reserve(trigrams_set.size());
+    for (auto& tr : trigrams_set)
     {
         container_.push_back(tr);
     }
@@ -98,11 +94,6 @@ bool IndexedFile::calculateLargeFile()
 }
 
 void IndexedFile::interruptIndexing()
-{
-
-}
-
-void IndexedFile::clearData()
 {
 
 }

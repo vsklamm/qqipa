@@ -15,12 +15,13 @@ public:
     std::string name;
     std::vector<char> number;
 
-    bool find(const char * buffer);
+    bool find(const char *buffer);
 };
 
 constexpr size_t maxMagicBytes = 12;
 
-static std::vector<magic_number> mnumbers = {
+static std::vector<magic_number> mnumbers =
+{
     { "elf",        { '\x7F', '\x45', '\x4C', '\x46' }},
     { "rpm",        { '\xED', '\xAB', '\xEE', '\xDB' }},
     { "7z",         { '\x37', '\x7A', '\xBC', '\xAF', '\x27', '\x1C' }},

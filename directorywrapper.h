@@ -7,17 +7,20 @@
 #include <QFutureWatcher>
 #include <QObject>
 
+#include <atomic>
+
 namespace qqipa {
 
-class DirectoryWrapper : public QObject
+struct DirectoryWrapper : public QObject
 {
     Q_OBJECT
 public:
-    DirectoryWrapper(const QString &directoryName);
+    DirectoryWrapper(const size_t &id, const QString &directoryName);
 
 signals:
-    void newIndexedFiles(int filesCompleted, std::vector<std::pair<fsize_t, QString>> foundFiles);
-    void indexingFinished(int indexedFiles);
+    void preprocessFinished(fsize_t upcomingFiles);
+    void newIndexedFiles(fsize_t filesDirCompleted, std::vector<std::pair<fsize_t, QString>> indexedFiles);
+    void indexingFinished(fsize_t indexedFiles);
 
 public slots:
     void startIndexing();
@@ -28,16 +31,14 @@ private slots:
     void indexFoundFiles(const std::vector<QString> &filesToIdndex);
 
 private:
-    std::vector<QString> impoverishDirectory();
+    inline std::vector<QString> impoverishDirectory();
+    inline void clearData();
 
 public:
+    std::atomic<bool> wasCancelled;
+    size_t id;
     QString name;
     QList<IndexedFile> indexedFileList;
-
-    // TODO: reduce qfutures
-    // QFuture<void> indexerFuture;
-    // QFutureWatcher<void> indexerWatcher;
-
 };
 
 }

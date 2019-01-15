@@ -10,7 +10,6 @@
 #include <QFuture>
 #include <QThread>
 #include <QFutureWatcher>
-#include <QList>
 
 #include <set>
 #include <stack>
@@ -25,8 +24,9 @@ public:
     ~Controller() = default;
 
 signals:
-    void newIndexedFiles(int indexedFiles, std::vector<std::pair<fsize_t, QString>> foundFiles);
-    void dirIsReadyToIndexing(QString dirName, fsize_t filesToIndex);
+    void dirIsReadyToIndexing(size_t iDir, fsize_t filesToIndex);
+    void newIndexedFiles(size_t iDir, fsize_t filesDirCompleted, std::vector<std::pair<fsize_t, QString>> indexedFiles);
+
     void indexingFinished(fsize_t indexedFiles);
     void searchingFinished(fsize_t foundFiles);
 
@@ -39,7 +39,8 @@ public slots:
 
     void on_deleteDirectory(QString dirName);
 
-    void passingIndexedFiles(int filesCompleted, std::vector<std::pair<fsize_t, QString>> indexedFiles);
+    void onDirIsReadyToScan(fsize_t upcomingFiles);
+    void passingIndexedFiles(fsize_t filesDirCompleted, std::vector<std::pair<fsize_t, QString>> indexedFiles);
     void onDirectoryIndexingFinished(fsize_t indexedDirFiles);
 
 private slots:
@@ -49,14 +50,12 @@ public:
     // methods
 
 private:
-    void clearData();
+    inline void clearData();
 
 public:
-    std::atomic<bool> wasCanceled;
-
-    std::atomic<int> processingDirectories;
+    std::atomic<fsize_t> processingDirectories;
     fsize_t indexedFilesAll = 0;
-    QList<DirectoryWrapper *> indexedDirectories; // TODO: is it normal?
+    std::vector<DirectoryWrapper *> directoryWrappers; // TODO: is it normal?
 
 };
 

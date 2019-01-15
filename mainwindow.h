@@ -9,6 +9,7 @@
 #include <QElapsedTimer>
 #include <QFileSystemWatcher>
 #include <QLabel>
+#include <QProgressBar>
 #include <QSplitter>
 #include <QStandardItemModel>
 
@@ -38,8 +39,8 @@ signals:
     void deleteDirectory(QString dirName);
 
 public slots:
-    void on_dirIsReadyToIndexing(QString dirName, fsize_t filesToIndex);
-    void on_updateFileTable(int completedFiles, std::vector<std::pair<fsize_t, QString>> indexedFiles);
+    void on_dirIsReadyToIndexing(size_t iDir, fsize_t filesToIndex);
+    void on_updateFileTable(size_t iDir, fsize_t filesDirCompleted, std::vector<std::pair<fsize_t, QString>> indexedFiles);
 
     void on_indexingFinished(int found_files);
     void on_searchingFinished(int found_files);
@@ -58,13 +59,11 @@ private:
     void addTableRow(fsize_t entries, QString file_name);
     void removeDirectory(int row);
 
-    QString getDirectoryName(int row);
-    bool isSubdirectory(int first_row, int second_row);
-    QString getSelectedDirectory();
-    void moveSplitter(QSplitter *splitter, int direction);
-
-public:
-    std::vector<QString> startDirectories;
+    inline QProgressBar *getDirProgressBar(int row);
+    inline QString getDirectoryName(int row);
+    inline bool isSubdirectory(int first_row, int second_row);
+    inline QString getSelectedDirectory();
+    inline void moveSplitter(QSplitter *splitter, int direction);
 
 private slots:
     void on_addDirButton_clicked();
@@ -75,11 +74,18 @@ private slots:
 
     void on_deleteDirButton_clicked();
 
+    void on_deleteAllButton_clicked();
+
+    void on_stopIndexingButton_clicked();
+
+public:
+    std::vector<QString> startDirectories;
+
 private:
     std::unique_ptr<Ui::MainWindow> ui;
     // Ui::MainWindow * ui;
     std::unique_ptr<QLabel> labelSearching;
-    QStandardItemModel *model;
+    QStandardItemModel *filesTableModel;
 
     std::unique_ptr<Controller> searcherController;
     std::unique_ptr<QElapsedTimer> taskTimer;

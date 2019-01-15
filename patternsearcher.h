@@ -22,7 +22,7 @@ signals:
     void newFoundFiles(int files_completed, std::vector<QString> found_files);
 
 public slots:
-    void search(const QString &pattern, QList<DirectoryWrapper *> &indexedDirectories);
+    void search(const QString &pattern, const std::vector<DirectoryWrapper *> &indexedDirectories);
 
     void interruptSearching();
 
@@ -30,8 +30,8 @@ private slots:
     fsize_t searchInFile(IndexedFile &indexedFile);
 
 private:
-    TrigramContainer getPatternTrigrams(const std::string &patternStd);
-    void clearData();
+    inline TrigramContainer getPatternTrigrams(const std::string &patternStd);
+    inline void clearData();
 
 private:
     std::atomic<bool> wasCanceled;

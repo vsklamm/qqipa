@@ -5,7 +5,7 @@
 #include <QTableView>
 #include <QPainter>
 
-class FilesTableView : public QTableView
+struct FilesTableView : public QTableView
 {
     Q_OBJECT
 public:
