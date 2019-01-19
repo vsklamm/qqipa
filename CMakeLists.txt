@@ -30,7 +30,7 @@ add_library(qqipa_core STATIC
 	magic_number.h magic_number.cpp
         indexedfile.h indexedfile.cpp
 	directorywrapper.h directorywrapper.cpp
-        patternsearcher.h patternsearcher.cpp
+        patternutil.h patternutil.cpp
 	controller.h controller.cpp)
 
 add_library(widgets STATIC
@@ -42,7 +42,8 @@ add_library(main_gui STATIC
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3")
 
-add_executable(qqipa main.cpp)
+qt5_add_resources(img.qrc)
+add_executable(qqipa main.cpp img.qrc)
 
 target_link_libraries(widgets Qt5::Widgets)
 target_link_libraries(qqipa_core widgets absl::flat_hash_set Qt5::Concurrent pthread)

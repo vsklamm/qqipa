@@ -9,14 +9,9 @@ struct TextViewer : public QPlainTextEdit
 {
     Q_OBJECT
 public:
-    explicit TextViewer(QWidget *parent = nullptr) : QPlainTextEdit(parent)
-    {
+    explicit TextViewer(QWidget *parent = nullptr);
 
-    }
-
-signals:
-
-public slots:
+    void show(const QString &file);
 };
 
 #endif // TEXTVIEWER_H

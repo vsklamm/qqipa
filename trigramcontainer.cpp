@@ -16,7 +16,8 @@ void TrigramContainer::reserve(size_t newCapacity)
 
 std::vector<trigram_t>::iterator TrigramContainer::begin()
 {
-    if (!accessible) {
+    if (!accessible)
+    {
         makeAccessible();
     }
     return trigrams.begin();
@@ -24,7 +25,8 @@ std::vector<trigram_t>::iterator TrigramContainer::begin()
 
 std::vector<trigram_t>::iterator TrigramContainer::end()
 {
-    if (!accessible) {
+    if (!accessible)
+    {
         makeAccessible();
     }
     return trigrams.end();
@@ -47,7 +49,8 @@ size_t TrigramContainer::size() const noexcept
 
 void TrigramContainer::makeAccessible()
 {
-    if (!trigrams.empty()) {
+    if (!trigrams.empty())
+    {
         std::sort(trigrams.begin(), trigrams.end());
         accessible = true;
     }

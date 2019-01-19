@@ -1,18 +1,14 @@
 ## Now
 
-* Progress for dirs
-* Search
-* Buttons enable/disable
-* TextViewer
-* 
-
-? Tests
-? Errors
+* Крашится, когда при индексации хотим проиндексировать ещё одну папку
+* Отмена на уровне файлов
+* Вложенные папки
+* Stop search + indexing
 
 ## Post
 
 * Types
 * Refactor
 * ReadMe
-* ToDo
-* Icon
+* ToDos
+* BUG: Count of indexed files after deleting any dir is invalid 

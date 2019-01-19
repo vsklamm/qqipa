@@ -15,14 +15,12 @@ struct TrigramContainer
 public:
     TrigramContainer();
 
-    void reserve(size_t new_capacity);
+    void reserve(size_t newCapacity);
     std::vector<trigram_t>::iterator begin();
     std::vector<trigram_t>::iterator end();
     void push_back(trigram_t element);
     void resize(size_t new_size);
     size_t size() const noexcept;
-
-private:
     void makeAccessible();
 
 private:

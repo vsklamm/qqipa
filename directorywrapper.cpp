@@ -1,24 +1,56 @@
 #include "directorywrapper.h"
 #include "magic_number.h"
 
-#include <QtConcurrent/QtConcurrentRun>
-#include <QtConcurrent/QtConcurrentMap>
+#include <QDebug>
+#include <QThread>
 #include <QDirIterator>
 
 namespace qqipa {
 
 DirectoryWrapper::DirectoryWrapper(const size_t &id, const QString &directoryName)
-    : wasCancelled(false), id(id), name(directoryName)
+    : wasIndCancelled(false), wasSearchCancelled(false), wasSuccessfullyIndexed(false), id(id), name(directoryName)
 {
 
 }
 
 void DirectoryWrapper::startIndexing()
 {
+    qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
+
     clearData();
+    emit preprocessStarted();
     const auto res = impoverishDirectory();
+    if (wasIndCancelled)
+    {
+        emit newIndexedFiles(0, {});
+        emit indexingFinished(0);
+        return;
+    }
     emit preprocessFinished(fsize_t(res.size()));
     indexFoundFiles(res);
+}
+
+void DirectoryWrapper::startSearching(PatternUtil patternUtil)
+{
+    if (!wasSuccessfullyIndexed)
+    {
+        emit searchingFinished(0);
+        return;
+    }
+    qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
+
+    emit dirSearchingStarted();
+    fsize_t foundFilesCount = 0;
+    for (auto& curFile : indexedFileVector)
+    {
+        auto result = curFile.searchPattern(patternUtil.rawSize_, patternUtil.trigrams_, patternUtil.regex_);
+        if (result > 0)
+        {
+            ++foundFilesCount;
+            emit newFoundFile(foundFilesCount, std::pair{result, curFile.getFullPath()});
+        }
+    }
+    emit searchingFinished(foundFilesCount);
 }
 
 std::vector<QString> DirectoryWrapper::impoverishDirectory()
@@ -34,11 +66,9 @@ std::vector<QString> DirectoryWrapper::impoverishDirectory()
                         QDirIterator::Subdirectories);
         while (it.hasNext())
         {
-            if (wasCancelled)
-            {
-                emit indexingFinished(0);
+            if (wasIndCancelled)
                 return result;
-            }
+
             auto file = it.next();
             if (it.fileInfo().isSymLink() || !it.fileInfo().size())
                 continue;
@@ -57,7 +87,6 @@ std::vector<QString> DirectoryWrapper::impoverishDirectory()
     }
     catch (...)
     {
-        emit indexingFinished(0);
         return {};
     }
 }
@@ -70,7 +99,7 @@ void DirectoryWrapper::indexFoundFiles(const std::vector<QString> &filesToIndex)
     indexedFilesVector.reserve(queueSize);
     for (size_t i = 0; i < filesToIndex.size(); ++i)
     {
-        if (wasCancelled)
+        if (wasIndCancelled)
         {
             emit indexingFinished(textIndexedFiles);
             return;
@@ -79,7 +108,7 @@ void DirectoryWrapper::indexFoundFiles(const std::vector<QString> &filesToIndex)
         auto notBinary = file.calculateIndex();
         if (notBinary)
         {
-            indexedFileList.append(file);
+            indexedFileVector.push_back(file);
             indexedFilesVector.emplace_back(file.container_.size(), file.getFullPath());
             ++textIndexedFiles;
             if (indexedFilesVector.size() > queueSize)
@@ -89,19 +118,26 @@ void DirectoryWrapper::indexFoundFiles(const std::vector<QString> &filesToIndex)
             }
         }
     }
+    wasSuccessfullyIndexed = !wasIndCancelled;
     emit newIndexedFiles(fsize_t(filesToIndex.size()), indexedFilesVector);
     emit indexingFinished(textIndexedFiles);
 }
 
 void DirectoryWrapper::interruptIndexing()
 {
-    wasCancelled = true;
+    wasIndCancelled = true;
+}
+
+void DirectoryWrapper::interruptSearching()
+{
+    wasSearchCancelled = true;
 }
 
 void DirectoryWrapper::clearData()
 {
-    wasCancelled = false;
-    indexedFileList = {};
+    wasIndCancelled = false;
+    wasSuccessfullyIndexed = false;
+    indexedFileVector = {};
 }
 
 }

@@ -14,9 +14,6 @@ public:
 private:
     void paintEvent(QPaintEvent *e);
 
-signals:
-
-public slots:
 };
 
 #endif // FILESTABLEWIDGET_H

@@ -5,6 +5,8 @@
 
 #include <QFileInfo>
 
+#include <regex>
+
 namespace qqipa {
 
 using fsize_t = std::int64_t;
@@ -16,16 +18,14 @@ struct IndexedFile
 {
 public:
     IndexedFile() = default;
-    IndexedFile(const QString &fileName, const QString &filePath, const fsize_t &size);
     IndexedFile(const QFileInfo &qFileInfo);
     ~IndexedFile() = default;
 
 public:
     bool calculateIndex();
-    QString getFullPath() const;
-    void interruptIndexing();
+    fsize_t searchPattern(fsize_t rawPatternSize, TrigramContainer &patternTrigrams, const std::regex &patternRegex);
 
-    void indexingFinished();
+    QString getFullPath() const;
 
 private:
     inline bool calculateSmallFile();

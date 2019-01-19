@@ -12,14 +12,11 @@
 #include <QProgressBar>
 #include <QPushButton>
 
-#include <set>
-#include <algorithm>
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    searcherController(new Controller),
-    taskTimer(new QElapsedTimer)
+    taskTimer(new QElapsedTimer),
+    searcherController(new Controller)
 {
     ui->setupUi(this);
 
@@ -29,10 +26,12 @@ MainWindow::MainWindow(QWidget *parent) :
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_Right), this, SLOT(moveSplitterRight()));
 
     connect(searcherController.get(), &Controller::dirIsReadyToIndexing, this, &MainWindow::on_dirIsReadyToIndexing);
-    connect(searcherController.get(), &Controller::newIndexedFiles, this, &MainWindow::on_updateFileTable);
+    connect(searcherController.get(), &Controller::dirPreprocessStarted, this, &MainWindow::on_dirBeforePreprocessing);
+    connect(searcherController.get(), &Controller::newIndexedFiles, this, &MainWindow::on_updateFileITable);
+    connect(searcherController.get(), &Controller::newFoundFile, this, &MainWindow::on_updateFileSTable);
     connect(searcherController.get(), &Controller::indexingFinished, this, &MainWindow::on_indexingFinished);
-    connect(this, &MainWindow::deleteDirectory, searcherController.get(), &Controller::on_deleteDirectory);
     connect(searcherController.get(), &Controller::searchingFinished, this, &MainWindow::on_searchingFinished);
+    connect(this, &MainWindow::deleteDirectory, searcherController.get(), &Controller::on_deleteDirectory);
 
     labelSearching = std::make_unique<QLabel>(ui->statusBar);
     labelSearching->setAlignment(Qt::AlignRight);
@@ -40,20 +39,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->statusBar->addPermanentWidget(labelSearching.get());
 
-    filesTableModel = new QStandardItemModel(0, 2, ui->filesTableView);
+    filesTableModel= std::make_unique<QStandardItemModel>(0, 2, ui->filesTableView);
     filesTableModel->setHorizontalHeaderLabels({ "Entries", "File" });
-    ui->filesTableView->setModel(filesTableModel);
+    ui->filesTableView->setModel(filesTableModel.get());
 
     ui->filesTableView->horizontalHeader()->setStretchLastSection(true);
-    ui->filesTableView->verticalHeader()->hide();
     ui->filesTableView->setShowGrid(false);
-    ui->filesTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->filesTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-
-    ui->directoriesTable->horizontalHeader()->hide();
-    ui->directoriesTable->verticalHeader()->hide();
-    ui->directoriesTable->setShowGrid(false);
-    ui->directoriesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
 
     ui->searchButton->setEnabled(false);
     ui->indexDirectoriesButton->setEnabled(false);
@@ -82,28 +74,42 @@ void MainWindow::on_addDirButton_clicked()
 
 void MainWindow::on_deleteDirButton_clicked()
 {
-    deleteDirectory("gorimhorosho");
+
+    auto selected = ui->directoriesTable->selectionModel()->selectedRows();
+    if (selected.empty()) {
+        return;
+    }
+    int iDir = selected.at(0).row();
+    startDirectories.erase(std::remove(startDirectories.begin(), startDirectories.end(), getDirectoryName(iDir)), startDirectories.end());
+    ui->directoriesTable->model()->removeRow(iDir);
+    emit deleteDirectory(size_t(iDir));
 }
 
 void MainWindow::on_deleteAllButton_clicked()
 {
-
+    const size_t sz = startDirectories.size();
+    startDirectories.clear();
+    ui->directoriesTable->model()->removeRows(0, ui->directoriesTable->rowCount());
+    for (size_t i = 0; i < sz; ++i)
+    {
+        emit deleteDirectory(i);
+    }
 }
 
 void MainWindow::on_indexDirectoriesButton_clicked()
 {
+    qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
+
     ui->searchButton->setEnabled(false);
-    if (startDirectories.size() != 0) {
-        taskTimer->restart();
-        searcherController->startIndexing(startDirectories);
-        for (int i = 1; i <= int(startDirectories.size()); ++i)
-        {
-            auto * dirProgress = getDirProgressBar(ui->directoriesTable->rowCount() - i);
-            dirProgress->setMaximum(0);
-            dirProgress->setValue(0);
-        }
-        startDirectories.clear();
-    }
+    ui->deleteDirButton->setEnabled(false);
+    ui->deleteAllButton->setEnabled(false);
+    filesTableModel->removeRows(0, filesTableModel->rowCount());
+
+    ui->statusBar->clearMessage();
+    labelSearching->clear();
+
+    taskTimer->restart();
+    searcherController->startIndexing(startDirectories);
 }
 
 void MainWindow::on_stopIndexingButton_clicked()
@@ -114,10 +120,24 @@ void MainWindow::on_stopIndexingButton_clicked()
 void MainWindow::on_searchButton_clicked()
 {
     const auto pattern = ui->patternTextEdit->toPlainText();
-    if (pattern.size() > 0) {
-        taskTimer->restart();
-        searcherController->startSearching(pattern);
+    if (pattern.size() == 0)
+        return;
+    if (pattern.size() > 255)
+    {
+        ui->patternTextEdit->clear();
+        return;
     }
+
+    ui->statusBar->clearMessage();
+    labelSearching->clear();
+
+    ui->searchButton->setEnabled(false);
+    ui->deleteDirButton->setEnabled(false);
+    ui->deleteAllButton->setEnabled(false);
+    filesTableModel->removeRows(0, filesTableModel->rowCount());
+
+    taskTimer->restart();
+    searcherController->startSearching(pattern);
 }
 
 bool MainWindow::addDirectory(const QString &directory)
@@ -127,10 +147,11 @@ bool MainWindow::addDirectory(const QString &directory)
     auto * item = new QTableWidgetItem();
     ui->directoriesTable->setItem(ui->directoriesTable->rowCount() - 1, 0, item);
 
-    auto * new_prog_bar = new QProgressBar();
-    new_prog_bar->setFormat(directory);
-    new_prog_bar->setValue(0);
-    ui->directoriesTable->setCellWidget(ui->directoriesTable->rowCount() - 1, 0, new_prog_bar);
+    auto * newProgBar = new QProgressBar();
+    newProgBar->setFormat(directory);
+    newProgBar->setValue(0);
+
+    ui->directoriesTable->setCellWidget(ui->directoriesTable->rowCount() - 1, 0, newProgBar);
 
     startDirectories.push_back(directory);
 
@@ -142,14 +163,6 @@ void MainWindow::addTableRow(fsize_t entries, QString file_name)
     filesTableModel->insertRow(filesTableModel->rowCount());
     filesTableModel->setItem(filesTableModel->rowCount() - 1, 0, new QStandardItem(QString::number(entries)));
     filesTableModel->setItem(filesTableModel->rowCount() - 1, 1, new QStandardItem(file_name));
-}
-
-void MainWindow::removeDirectory(int row)
-{
-    // auto name = getDirectoryName(row);
-    startDirectories.erase(startDirectories.begin() + row);
-    ui->directoriesTable->removeRow(row);
-    // TODO: what if indexing
 }
 
 QProgressBar *MainWindow::getDirProgressBar(int row)
@@ -167,21 +180,39 @@ bool MainWindow::isSubdirectory(int first_row, int second_row)
     return false;
 }
 
+void MainWindow::on_dirBeforePreprocessing(size_t iDir)
+{
+    auto * dirProgress = getDirProgressBar(int(iDir));
+    dirProgress->setMaximum(0);
+    dirProgress->setValue(0);
+    //    dirProgress->setStyleSheet("QProgressBar::chunk {"
+    //                               "background-color: #ffffff;"
+    //                               "}");
+    QPalette p = dirProgress->palette();
+    p.setColor(QPalette::Highlight, Qt::darkCyan);
+    dirProgress->setPalette(p);
+}
+
 void MainWindow::on_dirIsReadyToIndexing(size_t iDir, fsize_t filesToIndex)
 {
     auto dirProgress = getDirProgressBar(int(iDir)); // TODO: casts are bad
     dirProgress->setMaximum(int(filesToIndex));
 }
 
-void MainWindow::on_updateFileTable(size_t iDir, fsize_t filesDirCompleted, std::vector<std::pair<fsize_t, QString>> indexedFiles)
+void MainWindow::on_updateFileITable(size_t iDir, fsize_t filesDirCompleted, std::vector<std::pair<fsize_t, QString>> indexedFiles)
 {
     auto dirProgress = getDirProgressBar(int(iDir)); // TODO: casts are bad
 
     if (filesDirCompleted == dirProgress->maximum())
     {
+        if (dirProgress->maximum() == 0)
+            dirProgress->setMaximum(1); // TODO: workaround
         QPalette p = dirProgress->palette();
-        p.setColor(QPalette::Highlight, Qt::green);
+        p.setColor(QPalette::Highlight, Qt::darkGreen);
         dirProgress->setPalette(p);
+        // TODO: write right erasing from startDirectories
+        const auto dirName = getDirectoryName(int(iDir));
+        startDirectories.erase(std::remove(startDirectories.begin(), startDirectories.end(), dirName), startDirectories.end());
     }
 
     dirProgress->setValue(int(filesDirCompleted));
@@ -193,6 +224,12 @@ void MainWindow::on_updateFileTable(size_t iDir, fsize_t filesDirCompleted, std:
     labelSearching->setText(QString("Files indexed: %1").arg(filesDirCompleted));
 }
 
+void MainWindow::on_updateFileSTable(int filesCompleted, std::pair<fsize_t, QString> foundFile)
+{
+    addTableRow(foundFile.first, foundFile.second);
+    labelSearching->setText(QString("Files found: %1").arg(filesCompleted));
+}
+
 void MainWindow::on_indexingFinished(int found_files)
 {
     qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
@@ -201,12 +238,11 @@ void MainWindow::on_indexingFinished(int found_files)
     ui->statusBar->showMessage(QString("Indexing complete. Elapsed time: %1 ms").arg(taskTimer->elapsed()));
     labelSearching->setText(QString("Files indexed: %1").arg(found_files));
 
-    for (int i = 0; i < ui->directoriesTable->rowCount(); ++i)
-    {
-        // static_cast<QProgressBar*>(ui->directoriesTable->cellWidget(i, 0))->setValue(0);
-    }
-
     ui->searchButton->setEnabled(true);
+    ui->deleteDirButton->setEnabled(true);
+    ui->deleteAllButton->setEnabled(true);
+
+    startDirectories.clear();
 }
 
 void MainWindow::on_searchingFinished(int found_files)
@@ -216,6 +252,8 @@ void MainWindow::on_searchingFinished(int found_files)
     labelSearching->setText(QString("Files found: %1").arg(found_files));
 
     ui->searchButton->setEnabled(true);
+    ui->deleteDirButton->setEnabled(true);
+    ui->deleteAllButton->setEnabled(true);
 }
 
 void MainWindow::moveSplitterUp()
@@ -244,4 +282,11 @@ void MainWindow::moveSplitter(QSplitter *splitter, int direction)
     currentSizes[0] += 8 * direction;
     currentSizes[1] -= 8 * direction;
     splitter->setSizes(currentSizes);
+}
+
+void MainWindow::on_filesTableView_doubleClicked(const QModelIndex &index)
+{
+    int row = index.row();
+    ui->plainTextEdit->show(index.sibling(row, 1).data().toString());
+    // ui->widget_5->show();
 }
