@@ -101,6 +101,7 @@ void MainWindow::on_indexDirectoriesButton_clicked()
     qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
 
     ui->searchButton->setEnabled(false);
+    ui->indexDirectoriesButton->setEnabled(false);
     ui->deleteDirButton->setEnabled(false);
     ui->deleteAllButton->setEnabled(false);
     filesTableModel->removeRows(0, filesTableModel->rowCount());
@@ -142,6 +143,15 @@ void MainWindow::on_searchButton_clicked()
 
 bool MainWindow::addDirectory(const QString &directory)
 {
+    for (int i = 0; i < ui->directoriesTable->rowCount(); ++i)
+    {
+        auto cur_dir = getDirectoryName(i);
+        if (cur_dir == directory
+                || (directory.indexOf(cur_dir + QDir::separator()) == 0)
+                || (cur_dir.indexOf(directory + QDir::separator()) == 0)) {
+            return false;
+        }
+    }
     ui->directoriesTable->insertRow(ui->directoriesTable->rowCount());
 
     auto * item = new QTableWidgetItem();
@@ -185,11 +195,8 @@ void MainWindow::on_dirBeforePreprocessing(size_t iDir)
     auto * dirProgress = getDirProgressBar(int(iDir));
     dirProgress->setMaximum(0);
     dirProgress->setValue(0);
-    //    dirProgress->setStyleSheet("QProgressBar::chunk {"
-    //                               "background-color: #ffffff;"
-    //                               "}");
     QPalette p = dirProgress->palette();
-    p.setColor(QPalette::Highlight, Qt::darkCyan);
+    p.setColor(QPalette::Highlight, QColor::fromRgb(229, 81, 0));
     dirProgress->setPalette(p);
 }
 
@@ -208,9 +215,8 @@ void MainWindow::on_updateFileITable(size_t iDir, fsize_t filesDirCompleted, std
         if (dirProgress->maximum() == 0)
             dirProgress->setMaximum(1); // TODO: workaround
         QPalette p = dirProgress->palette();
-        p.setColor(QPalette::Highlight, Qt::darkGreen);
+        p.setColor(QPalette::Highlight, QColor::fromRgb(0, 96, 100));
         dirProgress->setPalette(p);
-        // TODO: write right erasing from startDirectories
         const auto dirName = getDirectoryName(int(iDir));
         startDirectories.erase(std::remove(startDirectories.begin(), startDirectories.end(), dirName), startDirectories.end());
     }
@@ -238,6 +244,7 @@ void MainWindow::on_indexingFinished(int found_files)
     ui->statusBar->showMessage(QString("Indexing complete. Elapsed time: %1 ms").arg(taskTimer->elapsed()));
     labelSearching->setText(QString("Files indexed: %1").arg(found_files));
 
+    ui->indexDirectoriesButton->setEnabled(true);
     ui->searchButton->setEnabled(true);
     ui->deleteDirButton->setEnabled(true);
     ui->deleteAllButton->setEnabled(true);
@@ -279,8 +286,8 @@ void MainWindow::moveSplitterRight()
 void MainWindow::moveSplitter(QSplitter *splitter, int direction)
 {
     auto currentSizes = splitter->sizes();
-    currentSizes[0] += 8 * direction;
-    currentSizes[1] -= 8 * direction;
+    currentSizes[0] += 10 * direction;
+    currentSizes[1] -= 10 * direction;
     splitter->setSizes(currentSizes);
 }
 
@@ -288,5 +295,4 @@ void MainWindow::on_filesTableView_doubleClicked(const QModelIndex &index)
 {
     int row = index.row();
     ui->plainTextEdit->show(index.sibling(row, 1).data().toString());
-    // ui->widget_5->show();
 }
