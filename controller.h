@@ -5,11 +5,7 @@
 #include "indexedfile.h"
 #include "patternutil.h"
 
-#include <QDebug>
-#include <QDir>
-#include <QDirIterator>
 #include <QFileSystemWatcher>
-#include <QFuture>
 #include <QThread>
 
 #include <set>

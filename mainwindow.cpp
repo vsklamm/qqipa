@@ -1,12 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <QCommonStyle>
 #include <QFileDialog>
 #include <QFuture>
 #include <QThreadPool>
-#include <QtConcurrent/QtConcurrentRun>
-#include <QtConcurrent/QtConcurrentMap>
 #include <QShortcut>
 #include <QListWidget>
 #include <QProgressBar>

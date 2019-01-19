@@ -14,9 +14,9 @@
 namespace qqipa {
 
 Controller::Controller()
-    : processingDirectories(0), fileSystemWatcher(new QFileSystemWatcher)
+    : processingDirectories(0), processingSDirectories(0), fileSystemWatcher(new QFileSystemWatcher)
 {
-    //connect(&searchingWatcher, SIGNAL(finished()), this, SLOT(onSearchingFinished()));
+
 }
 
 Controller::~Controller()
@@ -25,10 +25,10 @@ Controller::~Controller()
     {
         x->interruptIndexing();
     }
-    for (auto& ptr : threads) {
+    for (auto& ptr : threads)
+    {
         ptr->quit();
         ptr->wait();
-        //delete ptr; // TODO: is this right way?
     }
 }
 
@@ -45,7 +45,6 @@ void Controller::startIndexing(std::vector<QString> &startDirs)
     }
     for (auto& currentPath : startDirs)
     {
-        // TODO: WHAT IS SHIT WITH THIS CODE
         QThread *newDirThread = new QThread();
         // assert(threads.find(newDirThread) == threads.end());
         threads.insert(std::make_unique<QThread>(newDirThread));
@@ -113,7 +112,7 @@ void Controller::on_deleteDirectory(size_t iDir)
     directoryWrappers.erase(directoryWrappers.begin() + int(iDir));
     for (size_t i = iDir; i < directoryWrappers.size(); ++i)
     {
-        directoryWrappers[i]->id = i; // TODO: workaround?
+        directoryWrappers[i]->id = i;
     }
 }
 
@@ -182,7 +181,8 @@ void Controller::on_dirModified(const QString &path)
         if (ptr->wasSuccessfullyIndexed)
         {
             temporarySignalIndexing(ptr);
-        } else
+        }
+        else
         {
             ptr->interruptIndexing();
         }

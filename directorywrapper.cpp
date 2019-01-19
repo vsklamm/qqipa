@@ -67,11 +67,15 @@ std::vector<QString> DirectoryWrapper::impoverishDirectory()
         while (it.hasNext())
         {
             if (wasIndCancelled)
+            {
                 return result;
+            }
 
             auto file = it.next();
             if (it.fileInfo().isSymLink() || !it.fileInfo().size())
+            {
                 continue;
+            }
             QFile readFile(file);
             if (readFile.open(QIODevice::ReadOnly | QIODevice::Text))
             {
@@ -93,7 +97,7 @@ std::vector<QString> DirectoryWrapper::impoverishDirectory()
 
 void DirectoryWrapper::indexFoundFiles(const std::vector<QString> &filesToIndex)
 {
-    const size_t queueSize = 4;
+    const size_t queueSize = 6;
     fsize_t textIndexedFiles = 0;
     std::vector<std::pair<fsize_t, QString>> indexedFilesVector;
     indexedFilesVector.reserve(queueSize);
