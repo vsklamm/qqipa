@@ -47,7 +47,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->filesTableView->setShowGrid(false);
     ui->filesTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-    ui->searchButton->setEnabled(false);
     ui->indexDirectoriesButton->setEnabled(false);
 
     QThreadPool::globalInstance()->setMaxThreadCount(std::max(2, int(std::thread::hardware_concurrency())));
@@ -65,7 +64,7 @@ void MainWindow::on_addDirButton_clicked()
     if (directory.size() != 0)
     {
         const auto added = addDirectory(directory);
-        if (added)
+        if (added && ui->directoriesTable->rowCount() == 1)
         {
             ui->indexDirectoriesButton->setEnabled(true);
         }
@@ -102,6 +101,7 @@ void MainWindow::on_indexDirectoriesButton_clicked()
 
     ui->searchButton->setEnabled(false);
     ui->indexDirectoriesButton->setEnabled(false);
+    ui->addDirButton->setEnabled(false);
     ui->deleteDirButton->setEnabled(false);
     ui->deleteAllButton->setEnabled(false);
     filesTableModel->removeRows(0, filesTableModel->rowCount());
@@ -132,6 +132,8 @@ void MainWindow::on_searchButton_clicked()
     ui->statusBar->clearMessage();
     labelSearching->clear();
 
+    ui->indexDirectoriesButton->setEnabled(false);
+    ui->addDirButton->setEnabled(false);
     ui->searchButton->setEnabled(false);
     ui->deleteDirButton->setEnabled(false);
     ui->deleteAllButton->setEnabled(false);
@@ -245,6 +247,7 @@ void MainWindow::on_indexingFinished(int found_files)
     labelSearching->setText(QString("Files indexed: %1").arg(found_files));
 
     ui->indexDirectoriesButton->setEnabled(true);
+    ui->addDirButton->setEnabled(true);
     ui->searchButton->setEnabled(true);
     ui->deleteDirButton->setEnabled(true);
     ui->deleteAllButton->setEnabled(true);
@@ -258,6 +261,8 @@ void MainWindow::on_searchingFinished(int found_files)
     ui->statusBar->showMessage(QString("Searching complete. Elapsed time: %1 ms").arg(taskTimer->elapsed()));
     labelSearching->setText(QString("Files found: %1").arg(found_files));
 
+    ui->indexDirectoriesButton->setEnabled(true);
+    ui->addDirButton->setEnabled(true);
     ui->searchButton->setEnabled(true);
     ui->deleteDirButton->setEnabled(true);
     ui->deleteAllButton->setEnabled(true);

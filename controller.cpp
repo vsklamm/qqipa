@@ -3,6 +3,7 @@
 #include "directorywrapper.h"
 
 #include <string>
+#include <cassert>
 
 #include <QDebug>
 #include <QDir>
@@ -13,7 +14,7 @@
 namespace qqipa {
 
 Controller::Controller()
-    : processingDirectories(0)
+    : processingDirectories(0), fileSystemWatcher(new QFileSystemWatcher)
 {
     //connect(&searchingWatcher, SIGNAL(finished()), this, SLOT(onSearchingFinished()));
 }
@@ -24,10 +25,10 @@ Controller::~Controller()
     {
         x->interruptIndexing();
     }
-    for (auto ptr : threads) {
+    for (auto& ptr : threads) {
         ptr->quit();
         ptr->wait();
-        delete ptr; // TODO: is this right way?
+        //delete ptr; // TODO: is this right way?
     }
 }
 
@@ -38,10 +39,7 @@ void Controller::startIndexing(std::vector<QString> &startDirs)
     {
         if (!availableFolder->wasSuccessfullyIndexed)
         {
-            auto handle = connect(this, &Controller::temporaryStartIndexing, availableFolder, &DirectoryWrapper::startIndexing);
-            emit temporaryStartIndexing();
-            ++processingDirectories;
-            disconnect(this, &Controller::temporaryStartIndexing, nullptr, nullptr);
+            temporarySignalIndexing(availableFolder);
             oneDirIndexed = true;
         }
     }
@@ -49,7 +47,8 @@ void Controller::startIndexing(std::vector<QString> &startDirs)
     {
         // TODO: WHAT IS SHIT WITH THIS CODE
         QThread *newDirThread = new QThread();
-        threads.insert(newDirThread);
+        // assert(threads.find(newDirThread) == threads.end());
+        threads.insert(std::make_unique<QThread>(newDirThread));
 
         directoryWrappers.emplace_back(new DirectoryWrapper(directoryWrappers.size(), currentPath));
         directoryWrappers.back()->moveToThread(newDirThread);
@@ -63,6 +62,9 @@ void Controller::startIndexing(std::vector<QString> &startDirs)
         connect(directoryWrappers.back(), &DirectoryWrapper::newFoundFile, this, &Controller::passingFoundFile);
         connect(directoryWrappers.back(), &DirectoryWrapper::indexingFinished, this, &Controller::on_directoryIndexingFinished);
         connect(directoryWrappers.back(), &DirectoryWrapper::searchingFinished, this, &Controller::on_directorySearchingFinished);
+
+        fileSystemWatcher->addPath(currentPath);
+        connect(fileSystemWatcher.get(), &QFileSystemWatcher::directoryChanged, this, &Controller::on_dirModified);
 
         newDirThread->start();
         ++processingDirectories;
@@ -102,10 +104,12 @@ void Controller::interruptSearching()
 void Controller::on_deleteDirectory(size_t iDir)
 {
     if (directoryWrappers.size() < iDir + 1)
+    {
         return;
+    }
+    fileSystemWatcher->removePath(directoryWrappers[iDir]->name);
+
     directoryWrappers[iDir]->interruptIndexing();
-    // delete thread from 'threads' ???
-    // TODO: memory leak or not?
     directoryWrappers.erase(directoryWrappers.begin() + int(iDir));
     for (size_t i = iDir; i < directoryWrappers.size(); ++i)
     {
@@ -142,10 +146,18 @@ void Controller::passingFoundFile(fsize_t filesCompleted, std::pair<fsize_t, QSt
 void Controller::on_directoryIndexingFinished(fsize_t indexedDirFiles)
 {
     indexedFilesAll += indexedDirFiles;
+    size_t iDir = qobject_cast<DirectoryWrapper *>(QObject::sender())->id;
+
     if (!--processingDirectories)
     {
         qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
         emit indexingFinished(indexedFilesAll);
+    }
+    if (std::find(quWatcher.begin(), quWatcher.end(), directoryWrappers[iDir]->name) != quWatcher.end())
+    {
+        quWatcher.erase(directoryWrappers[iDir]->name);
+        temporarySignalIndexing(directoryWrappers[iDir]);
+        return;
     }
 }
 
@@ -157,6 +169,32 @@ void Controller::on_directorySearchingFinished(fsize_t foundFiles)
         qDebug() << QString(__func__) << " from work thread: " << QThread::currentThreadId();
         emit searchingFinished(foundFilesAll);
     }
+}
+
+void Controller::on_dirModified(const QString &path)
+{
+    auto iter = std::find_if(directoryWrappers.begin(), directoryWrappers.end(),
+                            [&path](DirectoryWrapper *dir) { return dir->name == path; });
+    if (iter != directoryWrappers.end())
+    {
+        quWatcher.insert(path);
+        DirectoryWrapper * ptr = *iter;
+        if (ptr->wasSuccessfullyIndexed)
+        {
+            temporarySignalIndexing(ptr);
+        } else
+        {
+            ptr->interruptIndexing();
+        }
+    }
+}
+
+void Controller::temporarySignalIndexing(DirectoryWrapper * availableFolder)
+{
+    auto handle = connect(this, &Controller::temporaryStartIndexing, availableFolder, &DirectoryWrapper::startIndexing);
+    emit temporaryStartIndexing();
+    ++processingDirectories;
+    disconnect(this, &Controller::temporaryStartIndexing, nullptr, nullptr);
 }
 
 }

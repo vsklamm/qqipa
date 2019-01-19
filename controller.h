@@ -8,6 +8,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QDirIterator>
+#include <QFileSystemWatcher>
 #include <QFuture>
 #include <QThread>
 
@@ -52,13 +53,20 @@ public slots:
     void on_directoryIndexingFinished(fsize_t indexedDirFiles);
     void on_directorySearchingFinished(fsize_t foundFiles);
 
+    void on_dirModified(const QString &path);
+
+private:
+    void temporarySignalIndexing(DirectoryWrapper * availableFolder);
+
 public:
     std::atomic<int> processingDirectories;
     std::atomic<int> processingSDirectories;
     fsize_t indexedFilesAll = 0;
     fsize_t foundFilesAll = 0;
     std::vector<DirectoryWrapper *> directoryWrappers; // TODO: is it normal?
-    std::set<QThread *> threads;
+    std::set<std::unique_ptr<QThread>> threads;
+    std::unique_ptr<QFileSystemWatcher> fileSystemWatcher;
+    std::set<QString> quWatcher;
 
 };
 
